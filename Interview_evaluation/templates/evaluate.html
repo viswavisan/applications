@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Python Evaluation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+</head>
+<body>
+<section class="section">
+    <div class="container">
+        <h1 class="title">Python Evaluation</h1>
+
+        <div class="field is-grouped is-grouped-multiline">
+            <label class="label" style="display:inline; margin-right:0.5em;">Applicant Name:</label>
+            <span>{{payload['applicant_name']}}</span>
+            <label class="label" style="display:inline; margin-right:0.5em; margin-left: 50px;">Applicant ID:</label>
+            <span id="applicant_id">{{payload['applicant_id']}}</span>
+        </div>
+
+        {% for key, question in payload['questions'].items() %}
+        <div class="field" style="position: relative; margin-bottom: 2rem;">
+            <label class="label">{{key}}. {{ question['question'] }}</label>
+
+                        {% if question['type'] == 'code' %}
+        <button 
+        type="button"
+        class="button is-small is-light"
+        onclick="runCode({{key}})"
+        title="Run Code"
+        >
+                ▶️
+            </button>
+            {% endif %}
+
+            <!-- Hidden value for pre-filling the editor -->
+            <input type="hidden" id="hidden_answer_{{key}}" value="{{question['answer']|e}}">
+
+            <div id="editor_{{key}}" class="monaco-editor" style="height: 120px; border: 1px solid #ccc;"></div>
+
+
+
+            {% if question['type'] == 'code' %}
+            <b>expected output:</b> <i>{{question['expected_output']}}</i>
+            <pre class="output-box" id="output_{{key}}"
+                 style="background: #f4f4f4; padding: 10px; margin-top: 10px; border-radius: 5px;"></pre>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Submit button -->
+        <button class="button is-primary" onclick="submitAnswers()">Submit All</button>
+        <!-- Message area -->
+        <div id="submitMessage" style="margin-top: 1rem;"></div>
+    </div>
+</section>
+
+<script>
+    let editors = {};  // Store all editor instances by question key
+
+    // Load Monaco Editor
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+        document.querySelectorAll('[id^="editor_"]').forEach(div => {
+            const key = div.id.split('_')[1];
+            const initialValue = document.getElementById(`hidden_answer_${key}`).value || '';
+            editors[key] = monaco.editor.create(div, {
+                value: initialValue,
+                language: 'python',
+                theme: 'vs-light',
+                automaticLayout: true
+            });
+        });
+    });
+
+    // Submit all answers
+    function submitAnswers() {
+        const applicant_id = document.getElementById('applicant_id').textContent.trim();
+        const answers = {};
+
+        for (const key in editors) {
+            answers[key] = editors[key].getValue();
+        }
+
+        fetch('/submit_evaluation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ applicant_id, answers })
+        })
+        .then(res => res.text())
+        .then(response => {
+            document.getElementById('submitMessage').innerText = "✅ Answers submitted successfully!";
+        })
+        .catch(err => {
+            document.getElementById('submitMessage').innerText = "❌ Failed to submit answers.";
+            console.error(err);
+        });
+    }
+
+    // Run code for a specific question
+    function runCode(index) {
+        const code = editors[index]?.getValue() || '';
+        fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: code
+        })
+        .then(response => response.text())
+        .then(output => {
+            document.getElementById(`output_${index}`).textContent = output;
+        })
+        .catch(error => {
+            document.getElementById(`output_${index}`).textContent = 'Error running code.';
+            console.error(error);
+        });
+    }
+</script>
+</body>
+</html>
