@@ -109,6 +109,5 @@ def save_answers(applicant_id, applicant_name, questions):
     db.session.commit()
     return 'saved successfully'
 
-
 if __name__ == "__main__":
     app.run(host='127.0.0.1', port=8000, debug=True)
