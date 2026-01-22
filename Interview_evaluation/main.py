@@ -64,9 +64,9 @@ def submit_evaluation():
 
 
 @app.route("/evaluate/<int:id>", methods=["GET"])
-def evaluate(id):
-    candidate = db.session.get(Answer, id)
-    print(id)
+def evaluate(applicant_id):
+    candidate = db.session.get(Answer, applicant_id)
+    print(applicant_id)
     if not candidate: return "Candidate is not registered please contact admin"
     return render_template("evaluate.html", payload={
         "applicant_name": candidate.applicant_name,
