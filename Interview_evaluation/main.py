@@ -65,9 +65,7 @@ def register():
             return "No record with id=1 found"
 
         new_record = Answer()
-        for column in Answer.__table__.columns:
-            if column.name != 'applicant_id':  # skip PK
-                setattr(new_record, column.name, getattr(first_record, column.name))
+        new_record.questions = first_record.questions
 
         new_record.applicant_name = data.get('name')
         db.session.add(new_record)
