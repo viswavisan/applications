@@ -56,6 +56,27 @@ def run():
     sys.stdout = old_stdout
     return output
 
+@app.route('/register', methods=['POST'])
+def register():
+    try:
+        data = request.get_json()
+        first_record = db.session.get(Answer, 1)
+        if not first_record:
+            return "No record with id=1 found"
+
+        new_record = Answer()
+        for column in Answer.__table__.columns:
+            if column.name != 'applicant_id':  # skip PK
+                setattr(new_record, column.name, getattr(first_record, column.name))
+
+        new_record.applicant_name = data.get('name')
+        db.session.add(new_record)
+        db.session.commit()
+        return str(new_record.applicant_id)
+
+    except Exception as e:
+        return str(e)
+
 @app.route('/submit_evaluation', methods=['POST'])
 def submit_evaluation():
     try:
@@ -74,14 +95,21 @@ def submit_evaluation():
 
 @app.route("/evaluate/<int:candidate_id>", methods=["GET"])
 def evaluate(candidate_id):
-    candidate = db.session.get(Answer, candidate_id)
-    if not candidate: return "Candidate is not registered please contact admin"
-    return render_template("evaluate.html", payload={
-        "applicant_name": candidate.applicant_name,
-        "applicant_id": candidate.applicant_id,
-        "questions": json.loads(str(candidate.questions))
-    })
-
+    try:
+        candidate = db.session.get(Answer, candidate_id)
+        if not candidate: return "Candidate is not registered please contact admin"
+        try:
+            questions = json.loads(candidate.questions or '{}')
+        except (json.JSONDecodeError, TypeError):
+            questions = {}
+        payload={
+            "applicant_name": candidate.applicant_name,
+            "applicant_id": candidate.applicant_id,
+            "questions": questions
+        }
+        return render_template("evaluate.html", payload=payload)
+    except Exception as e:
+        return str(e)
 @app.route("/admin", methods=["GET"])
 def admin():
     # Admin dashboard logic

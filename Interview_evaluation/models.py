@@ -12,7 +12,8 @@ class Database:
 
 class Answer(Base):
     __tablename__ = 'answers'
-    applicant_id = Column(Integer, primary_key=True)
+    #applicant_id auto generated
+    applicant_id = Column(Integer, primary_key=True, autoincrement=True)
     applicant_name = Column(String, nullable=True)
     questions = Column(String, nullable=True)
     answers = Column(String, nullable=True)
