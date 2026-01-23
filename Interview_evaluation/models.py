@@ -1,10 +1,11 @@
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import scoped_session, declarative_base, sessionmaker
+import os
 
 Base = declarative_base()
 
 class Database:
-    def __init__(self, db_url="sqlite:///interview.db"):
+    def __init__(self, db_url= f"sqlite:///{os.path.join(os.path.abspath(os.path.dirname(__file__)), "interview.db")}"):
         self.engine = create_engine(db_url)
         # scoped_session creates a thread-local session
         self.session = scoped_session(sessionmaker(bind=self.engine))
