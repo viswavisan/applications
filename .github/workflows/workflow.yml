@@ -39,19 +39,28 @@ jobs:
             -H "Content-Type: application/json" \
             https://api.render.com/v1/services/srv-d5q9lrfgi27c73f7fhc0/deploys)
   
-          echo "deploy_id=$(echo $response | jq -r '.id')" >> $GITHUB_ENV
+          echo "Raw trigger response: $response"
+          deploy_id=$(echo $response | jq -r '.id')
+
+          if [ -z "$deploy_id" ] || [ "$deploy_id" = "null" ]; then
+            echo "❌ Failed to trigger deploy. Check API key and service ID."
+            exit 1
+          fi
+
+          echo "deploy_id=$deploy_id" >> $GITHUB_ENV
 
       - name: Wait for Render Deploy to Finish
         run: |
           echo "Waiting for Render deploy $deploy_id ..."
           for i in {1..30}; do
             response=$(curl -s \
+
               -H "Authorization: Bearer rnd_oH3mo7qi20XqprxbjzX6ypmwicm6" \
               https://api.render.com/v1/deploys/$deploy_id)
-  
+
+            echo "Raw status response: $response"
             status=$(echo $response | jq -r '.status')
-            echo "Current status: $status"
-  
+
             if [ "$status" = "live" ]; then
               echo "✅ Deploy finished successfully!"
               exit 0
@@ -59,9 +68,11 @@ jobs:
               echo "❌ Deploy failed."
               exit 1
             fi
-  
+
+            echo "Current status: $status (waiting...)"
             sleep 10
           done
-  
+
           echo "❌ Timed out waiting for deploy."
           exit 1
+
