@@ -3,3 +3,4 @@ sqlalchemy
 flask-smorest
 marshmallow
 pytest
+werkzeug
