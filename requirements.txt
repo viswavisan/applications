@@ -4,3 +4,4 @@ flask-smorest
 marshmallow
 pytest
 werkzeug
+alembic

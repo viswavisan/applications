@@ -3,6 +3,7 @@ from flask import request
 import json,sys,io
 from flask_smorest import Api
 from models import db, Answer
+from questions import questions
 
 app = Flask(__name__)
 
@@ -60,13 +61,9 @@ def run():
 def register():
     try:
         data = request.get_json()
-        first_record = db.session.get(Answer, 1)
-        if not first_record:
-            return "No record with id=1 found"
-
+        # get question and answers from questions.py
         new_record = Answer()
-        new_record.questions = first_record.questions
-
+        new_record.questions = json.dumps(questions)
         new_record.applicant_name = data.get('name')
         db.session.add(new_record)
         db.session.commit()

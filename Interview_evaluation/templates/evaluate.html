@@ -15,36 +15,37 @@
             <label class="label" style="display:inline; margin-right:0.5em;">Applicant Name:</label>
             <span>{{payload['applicant_name']}}</span>
             <label class="label" style="display:inline; margin-right:0.5em; margin-left: 50px;">Applicant ID:</label>
-            <span id="applicant_id">{{payload['applicant_id']}}</span>
+            <span id="applicant_id" style="margin-right: 1rem;">{{payload['applicant_id']}}</span>
+            <button type="button" style="margin-left: 1rem; background: transparent; border: none; color: green; font-weight: bold; font-size: 1.5rem; cursor: pointer; align-self: baseline; line-height: 1; vertical-align: top;" onclick="register()">+</button>
+
         </div>
 
-        {% for key, question in payload['questions'].items() %}
+        {% for question in payload['questions'] %}
+            {% set key = question['id'] %}
         <div class="field" style="position: relative; margin-bottom: 2rem;">
             <label class="label">{{key}}. {{ question['question'] }}</label>
 
-                        {% if question['type'] == 'code' %}
-        <button 
-        type="button"
-        class="button is-small is-light"
-        onclick="runCode({{key}})"
-        title="Run Code"
-        >
-                ▶️
-            </button>
-            {% endif %}
+                <button
+                type="button"
+                class="button is-small is-light"
+                onclick="runCode({{key}})"
+                title="Run Code"
+                >
+                        ▶️
+                </button>
+
 
             <!-- Hidden value for pre-filling the editor -->
             <input type="hidden" id="hidden_answer_{{key}}" value="{{question['answer']|e}}">
 
-            <div id="editor_{{key}}" class="monaco-editor" style="height: 120px; border: 1px solid #ccc;"></div>
+            <div id="editor_{{key}}" class="monaco-editor" style="height: 120px; border: 1px solid #ccc; overflow: hidden; resize: vertical;"></div>
 
 
 
-            {% if question['type'] == 'code' %}
             <b>expected output:</b> <i>{{question['expected_output']}}</i>
             <pre class="output-box" id="output_{{key}}"
                  style="background: #f4f4f4; padding: 10px; margin-top: 10px; border-radius: 5px;"></pre>
-            {% endif %}
+
         </div>
         {% endfor %}
 
@@ -112,6 +113,22 @@
         .catch(error => {
             document.getElementById(`output_${index}`).textContent = 'Error running code.';
             console.error(error);
+        });
+    }
+
+    function register() {
+        const applicant_id = document.getElementById('applicant_id').textContent.trim();
+        fetch('/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ applicant_id })
+        })
+        .then(res => res.text())
+        .then(response => {
+            alert(response); // Or update a message div
+        })
+        .catch(err => {
+            console.error('Error registering applicant:', err);
         });
     }
 </script>

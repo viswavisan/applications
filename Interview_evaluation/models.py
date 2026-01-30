@@ -21,6 +21,5 @@ class Answer(Base):
     applicant_id = Column(Integer, primary_key=True, autoincrement=True)
     applicant_name = Column(String, nullable=True)
     questions = Column(String, nullable=True)
-    answers = Column(String, nullable=True)
 
 db = Database()

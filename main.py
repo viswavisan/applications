@@ -1,4 +1,4 @@
-# main.py
+# app.py
 import os
 import sys
 
@@ -7,7 +7,7 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.serving import run_simple
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'Interview_evaluation')))
-from Interview_evaluation.main import app
+from Interview_evaluation.app import app
 
 main_app = Flask(__name__)
 
