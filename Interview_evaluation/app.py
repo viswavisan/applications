@@ -57,14 +57,14 @@ def run():
     sys.stdout = old_stdout
     return output
 
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['POST','GET'])
 def register():
     try:
         data = request.get_json()
         # get question and answers from questions.py
         new_record = Answer()
         new_record.questions = json.dumps(questions)
-        new_record.applicant_name = data.get('name')
+        new_record.applicant_name = data.get('name','xxxxx')
         db.session.add(new_record)
         db.session.commit()
         return str(new_record.applicant_id)

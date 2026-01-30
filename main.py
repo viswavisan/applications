@@ -1,6 +1,7 @@
 # app.py
 import os
 import sys
+from migrations import run_alembic_commands
 
 from flask import Flask
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
@@ -11,7 +12,12 @@ from Interview_evaluation.app import app
 
 main_app = Flask(__name__)
 
-application = DispatcherMiddleware(main_app, {'': app,})
+@main_app.route("/run_alembic")
+def run_alembic():
+    run_alembic_commands.main()
+    return "migration completed"
+
+application = DispatcherMiddleware(main_app, {'/interview': app,})
 
 if __name__ == "__main__":
     run_simple('0.0.0.0', 5000, application, use_reloader=True, use_debugger=True)
