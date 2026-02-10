@@ -60,7 +60,7 @@ def run():
 @app.route('/register', methods=['POST','GET'])
 def register():
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         # get question and answers from questions.py
         new_record = Answer()
         new_record.questions = json.dumps(questions)
