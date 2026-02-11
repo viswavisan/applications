@@ -7,8 +7,8 @@ Base = declarative_base()
 class Database:
     def __init__(self, db_url= None):
         if db_url is None:
-            db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "interview.db")
-            db_url = f"sqlite:///{db_path}"
+            local_db_path = f"sqlite:///{os.path.join(os.path.abspath(os.path.dirname(__file__)), 'interview.db')}"
+            db_url = os.getenv("DATABASE_URL", local_db_path)
 
         self.engine = create_engine(db_url)
         # scoped_session creates a thread-local session

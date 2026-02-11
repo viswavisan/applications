@@ -1,67 +1,41 @@
-from flask import Flask, render_template, redirect
-from flask import request
-import json,sys,io
-from flask_smorest import Api
-from models import db, Answer
-from questions import questions
+import json
+import sys
+import io
+import os
+from flask import Flask, render_template, Blueprint, request
+try:
+    from .models import db, Answer
+    from .questions import questions
+except ImportError:
+    from models import db, Answer
+    from questions import questions
 
-app = Flask(__name__)
-
-@app.errorhandler(404)
-def page_not_found(e):
-    # Gather all registered endpoints
-    rules = []
-    for rule in app.url_map.iter_rules():
-        # Filter out internal methods like HEAD/OPTIONS for cleaner output
-        methods = ','.join(sorted(rule.methods - {'HEAD', 'OPTIONS'}))
-        rules.append(f"<li><b>{rule.rule}</b> [{methods}]</li>")
-
-    return f"""
-     <h3>Page not found (404)</h3>
-     <p>The requested URL was not found. Here are the available endpoints:</p>
-     <ul>{''.join(sorted(rules))}</ul>
-     {e}
-     """, 404
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
+app = Blueprint('main', __name__, template_folder=template_dir)
 
 
-app.config["API_TITLE"] = "My API"
-app.config["API_VERSION"] = "v1"
-app.config["OPENAPI_VERSION"] = "3.0.2"
-app.config["OPENAPI_URL_PREFIX"] = "/"
-app.config["OPENAPI_SWAGGER_UI_PATH"] = "/"
-app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
-
-api = Api(app)
-
-@app.route("/")
-def home():
-    return redirect("/docs")
-
-# Flask teardown to remove session after request
-@app.teardown_appcontext
-def shutdown_session(exception=None):
-    print(exception)
-    db.session.remove()
-
-@app.route('/run',methods=['POST'])
+@app.route('/run', methods=['POST'])
 def run():
-    code=request.get_data(as_text=True)
+    code = request.get_data(as_text=True)
     old_stdout = sys.stdout
     redirected_output = sys.stdout = io.StringIO()
     try:
-        exec(code,{})
+        exec(code, {})
         output = redirected_output.getvalue()
     except Exception as e:
         output = str(e)
+    finally:
+        sys.stdout = old_stdout
 
-    sys.stdout = old_stdout
     return output
 
-@app.route('/register', methods=['POST','GET'])
+
+@app.route('/register', methods=['POST', 'GET'])
 def register():
     try:
         data = request.get_json(silent=True) or {}
-        # get question and answers from questions.py
+
+        # Create new record with questions from questions.py
         new_record = Answer()
         new_record.questions = json.dumps(questions)
         new_record.applicant_name = data.get('name','xxxxx')
@@ -72,16 +46,16 @@ def register():
     except Exception as e:
         return str(e)
 
+
 @app.route('/submit_evaluation', methods=['POST'])
 def submit_evaluation():
     try:
         data = request.get_json()
         record = db.session.get(Answer, int(data['applicant_id']))
-        record.answers=json.dumps(data['answers'])
-        questions_dict = json.loads(record.questions)
-        for key, value in data['answers'].items():
-            questions_dict[key]["answer"] = value
-        record.questions = json.dumps(questions_dict)
+        questions_json=json.loads(record.questions)
+        for question in questions_json:
+            question['answer']=data['answers'][str(question['id'])]
+        record.questions = json.dumps(questions_json)
         db.session.commit()
         return 'thanks'
     except Exception as e:
@@ -92,15 +66,17 @@ def submit_evaluation():
 def evaluate(candidate_id):
     try:
         candidate = db.session.get(Answer, candidate_id)
-        if not candidate: return "Candidate is not registered please contact admin"
+        if not candidate:
+            return "Candidate is not registered please contact admin"
         try:
-            questions = json.loads(candidate.questions or '{}')
+            questions_value = json.loads(candidate.questions or '{}')
         except (json.JSONDecodeError, TypeError):
-            questions = {}
-        payload={
+            questions_value = {}
+
+        payload = {
             "applicant_name": candidate.applicant_name,
             "applicant_id": candidate.applicant_id,
-            "questions": questions
+            "questions": questions_value
         }
         return render_template("evaluate.html", payload=payload)
     except Exception as e:
@@ -110,27 +86,10 @@ def admin():
     # Admin dashboard logic
     return render_template("admin.html")
 
-@app.route("/submit_answers", methods=["POST"])
-def submit_answers():
-    #get the applicant_id, applicant_name and questions from the request body
-    request_data = request.get_json()
-    applicant_id = int(request_data.get('applicant_id'))
-    applicant_name = request_data.get('applicant_name')
-    questions = request_data.get('questions')
-    questions = json.dumps(questions)
-    save_answers(applicant_id, applicant_name, questions)
-    return 'Answers submitted successfully!'
 
-def save_answers(applicant_id, applicant_name, questions):
-    #insert if id not exists, else update
-    existing_answer = db.session.get(Answer, applicant_id)
-    if existing_answer:
-        existing_answer.applicant_name = applicant_name
-        existing_answer.questions = questions
-    else:
-        db.session.add(Answer(applicant_id=applicant_id, applicant_name=applicant_name, questions=questions,answers="{}"))
-    db.session.commit()
-    return 'saved successfully'
+
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    mainapp = Flask(__name__)
+    mainapp.register_blueprint(app)
+    mainapp.run(host='0.0.0.0', port=5000, debug=True)
