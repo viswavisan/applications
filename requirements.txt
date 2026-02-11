@@ -5,3 +5,4 @@ marshmallow
 pytest
 werkzeug
 alembic
+psycopg2

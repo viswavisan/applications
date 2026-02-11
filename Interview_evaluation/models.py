@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import scoped_session, declarative_base, sessionmaker
+import psycopg2
 import os
 
 Base = declarative_base()
