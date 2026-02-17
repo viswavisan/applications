@@ -1,0 +1,18 @@
+name: Enforce Branch Naming
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          if [[ ! "$BRANCH_NAME" =~ ^issue-[0-9]+_.+ ]]; then
+            echo "❌ Branch name '$BRANCH_NAME' does not follow 'issue-<number>_<description>' format."
+            exit 1
+          fi
