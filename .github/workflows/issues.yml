@@ -1,26 +1,43 @@
-name: Move Issue to Development
-on: [create]
+name: Issues Automation
+on:
+  push:
+    branches-ignore:
+      - main
 
 jobs:
-  test:
+  check-branch-name:
     runs-on: ubuntu-latest
     steps:
-      - name: Extract Issue Number
-        id: get_issue
+      - name: Check branch name
         run: |
-          # This regex finds the first number in the branch name
-          BRANCH_NAME="${{ github.event.ref }}"
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          if [[ ! "$BRANCH_NAME" =~ ^issue-[0-9]+_.+ ]]; then
+            echo "❌ Branch name '$BRANCH_NAME' does not follow 'issue-<number>_<description>' format."
+            exit 1
+          fi
 
-          echo "Branch detected: $BRANCH_NAME"
 
-#       - name: Update Issue Label
-#         if: steps.get_issue.outputs.issue_id != ''
-#         env:
-#           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#           ISSUE_ID: ${{ steps.get_issue.outputs.issue_id }}
-#         run: |
-#           # Add a 'development' label to the issue
-#           gh issue edit $ISSUE_ID --add-label "development"
-          
-#           # Optional: Add a comment to the issue
-#           gh issue comment $ISSUE_ID --body "Branch created! Moving this to Development."
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | sed -E 's/^issue-([0-9]+)_.+/\1/')
+          echo "✅ Branch name '$BRANCH_NAME' is valid."
+          echo "📌 Extracted issue number: $ISSUE_NUMBER"
+      
+          # Optionally set it as an output for later steps
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+      - name: Check issue exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔎 Checking if issue #$ISSUE_NUMBER exists..."
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/$ISSUE_NUMBER")
+
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "❌ Issue #$ISSUE_NUMBER does not exist in ${GITHUB_REPOSITORY}."
+            cat response.json
+            exit 1
+          else
+            echo "✅ Issue #$ISSUE_NUMBER exists in ${GITHUB_REPOSITORY}."
+          fi
+
