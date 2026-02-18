@@ -68,9 +68,9 @@ jobs:
           DUPLICATES=$(echo "$BRANCHES" | grep -E "^issue-${ISSUE_NUMBER}_" | grep -v "^${BRANCH_NAME}$" || true)
 
           if [[ -n "$DUPLICATES" ]]; then
-            echo "⚠️ Warning: Another branch already exists with issue-$ISSUE_NUMBER:"
+            echo "❌ Another branch already exists with issue-$ISSUE_NUMBER:"
             echo "$DUPLICATES"
-            # Do not fail the job, just warn
+            exit 1
           else
             echo "✅ No duplicate branches found for issue-$ISSUE_NUMBER."
           fi
