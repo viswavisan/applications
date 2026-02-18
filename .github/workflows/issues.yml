@@ -38,6 +38,7 @@ jobs:
           if [[ "$ISSUE_STATE" == "null" ]]; then
             echo "❌ Issue #$ISSUE_NUMBER does not exist in ${GITHUB_REPOSITORY}."
             exit 1
+
           elif [[ "$ISSUE_STATE" == "open" ]]; then
             echo "✅ Issue #$ISSUE_NUMBER exists and is OPEN."
             echo "Setting status to 'development'..."
@@ -52,25 +53,4 @@ jobs:
           else
             echo "❓ Unexpected issue state: $ISSUE_STATE"
             exit 1
-          fi
-
-      - name: Check for duplicate issue branches
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "🔎 Checking if another branch with issue-$ISSUE_NUMBER exists..."
-          BRANCHES=$(curl -s \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
-            | jq -r '.[].name')
-
-          DUPLICATES=$(echo "$BRANCHES" | grep -E "^issue-${ISSUE_NUMBER}_" | grep -v "^${BRANCH_NAME}$" || true)
-
-          if [[ -n "$DUPLICATES" ]]; then
-            echo "❌ Another branch already exists with issue-$ISSUE_NUMBER:"
-            echo "$DUPLICATES"
-            exit 1
-          else
-            echo "✅ No duplicate branches found for issue-$ISSUE_NUMBER."
           fi
