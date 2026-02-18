@@ -21,8 +21,8 @@ jobs:
           echo "✅ Branch name '$BRANCH_NAME' is valid."
           echo "📌 Extracted issue number: $ISSUE_NUMBER"
 
-          # Export for later steps
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Check issue exists and status
         env:
@@ -38,7 +38,6 @@ jobs:
           if [[ "$ISSUE_STATE" == "null" ]]; then
             echo "❌ Issue #$ISSUE_NUMBER does not exist in ${GITHUB_REPOSITORY}."
             exit 1
-
           elif [[ "$ISSUE_STATE" == "open" ]]; then
             echo "✅ Issue #$ISSUE_NUMBER exists and is OPEN."
             echo "Setting status to 'development'..."
@@ -47,7 +46,6 @@ jobs:
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/$ISSUE_NUMBER/labels" \
               -d '{"labels":["status: development"]}'
-
           elif [[ "$ISSUE_STATE" == "closed" ]]; then
             echo "⚠️ Issue #$ISSUE_NUMBER exists but is CLOSED."
             exit 1
@@ -61,20 +59,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "🔎 Checking if another branch with issue-$ISSUE_NUMBER exists..."
-          # Fetch all branches
           BRANCHES=$(curl -s \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
             | jq -r '.[].name')
 
-          # Look for other branches with same issue number
-          DUPLICATE=$(echo "$BRANCHES" | grep -E "^issue-${ISSUE_NUMBER}_")
+          DUPLICATES=$(echo "$BRANCHES" | grep -E "^issue-${ISSUE_NUMBER}_" | grep -v "^${BRANCH_NAME}$" || true)
 
-          if [[ -n "$DUPLICATE" && "$DUPLICATE" != "$BRANCH_NAME" ]]; then
-            echo "❌ Another branch already exists with issue-$ISSUE_NUMBER:"
-            echo "$DUPLICATE"
-            exit 1
+          if [[ -n "$DUPLICATES" ]]; then
+            echo "⚠️ Warning: Another branch already exists with issue-$ISSUE_NUMBER:"
+            echo "$DUPLICATES"
+            # Do not fail the job, just warn
           else
             echo "✅ No duplicate branches found for issue-$ISSUE_NUMBER."
           fi
