@@ -8,7 +8,7 @@ jobs:
   check-branch-name:
     runs-on: ubuntu-latest
     steps:
-    
+
       - name: Check branch name
         run: |
           BRANCH_NAME="${GITHUB_REF##*/}"
@@ -17,15 +17,12 @@ jobs:
             exit 1
           fi
 
-
           ISSUE_NUMBER=$(echo "$BRANCH_NAME" | sed -E 's/^issue-([0-9]+)_.+/\1/')
           echo "✅ Branch name '$BRANCH_NAME' is valid."
           echo "📌 Extracted issue number: $ISSUE_NUMBER"
-      
-          # Optionally set it as an output for later steps
-          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
 
-          
+          # Export for later steps
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
 
       - name: Check issue exists and status
         env:
@@ -41,7 +38,7 @@ jobs:
           if [[ "$ISSUE_STATE" == "null" ]]; then
             echo "❌ Issue #$ISSUE_NUMBER does not exist in ${GITHUB_REPOSITORY}."
             exit 1
-            
+
           elif [[ "$ISSUE_STATE" == "open" ]]; then
             echo "✅ Issue #$ISSUE_NUMBER exists and is OPEN."
             echo "Setting status to 'development'..."
@@ -49,8 +46,8 @@ jobs:
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/$ISSUE_NUMBER/labels" \
-              -d '{"labels":["status: development"]}
-            
+              -d '{"labels":["status: development"]}'
+
           elif [[ "$ISSUE_STATE" == "closed" ]]; then
             echo "⚠️ Issue #$ISSUE_NUMBER exists but is CLOSED."
             exit 1
@@ -58,8 +55,6 @@ jobs:
             echo "❓ Unexpected issue state: $ISSUE_STATE"
             exit 1
           fi
-
-          
 
       - name: Check for duplicate issue branches
         env:
@@ -83,5 +78,3 @@ jobs:
           else
             echo "✅ No duplicate branches found for issue-$ISSUE_NUMBER."
           fi
-
-
