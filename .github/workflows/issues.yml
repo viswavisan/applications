@@ -9,8 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Check branch name
+      - name: Prepare environment
         run: |
+          set -euo pipefail
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Validate branch name and extract issue number
+        run: |
+          set -euo pipefail
           BRANCH_NAME="${GITHUB_REF##*/}"
           if [[ ! "$BRANCH_NAME" =~ ^issue-[0-9]+_.+ ]]; then
             echo "❌ Branch name '$BRANCH_NAME' does not follow 'issue-<number>_<description>' format."
@@ -24,55 +31,77 @@ jobs:
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
-      - name: Check issue exists and status
+      - name: Check for other branches with same issue number (strict)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🔎 Checking if issue #$ISSUE_NUMBER exists..."
-          RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/$ISSUE_NUMBER")
+          set -euo pipefail
+          BRANCH_NAME="${BRANCH_NAME}"
+          ISSUE_NUMBER="${ISSUE_NUMBER}"
+          echo "🔎 Looking for other branches matching issue-${ISSUE_NUMBER}_* (excluding $BRANCH_NAME)..."
 
-          ISSUE_STATE=$(echo "$RESPONSE" | jq -r '.state')
-
-          if [[ "$ISSUE_STATE" == "null" ]]; then
-            echo "❌ Issue #$ISSUE_NUMBER does not exist in ${GITHUB_REPOSITORY}."
-            exit 1
-
-          elif [[ "$ISSUE_STATE" == "open" ]]; then
-            echo "✅ Issue #$ISSUE_NUMBER exists and is OPEN."
-            echo "Setting status to 'development'..."
-            curl -s -X POST \
-              -H "Authorization: token $GITHUB_TOKEN" \
+          # Collect all branch names (handle pagination)
+          PAGE=1
+          ALL_BRANCHES=""
+          while :; do
+            PAGE_RESULT=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/$ISSUE_NUMBER/labels" \
-              -d '{"labels":["status: development"]}'
-          elif [[ "$ISSUE_STATE" == "closed" ]]; then
-            echo "⚠️ Issue #$ISSUE_NUMBER exists but is CLOSED."
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/branches?per_page=100&page=${PAGE}")
+            # break if empty array
+            COUNT=$(echo "$PAGE_RESULT" | jq 'length')
+            if [[ "$COUNT" -eq 0 ]]; then
+              break
+            fi
+            # append branch names
+            NAMES=$(echo "$PAGE_RESULT" | jq -r '.[].name')
+            ALL_BRANCHES="${ALL_BRANCHES}"$'\n'"${NAMES}"
+            PAGE=$((PAGE+1))
+          done
+
+          # Normalize list and search for duplicates
+          # Remove leading empty line if present
+          ALL_BRANCHES=$(echo "$ALL_BRANCHES" | sed '/^\s*$/d' || true)
+
+          # Find branches that match the issue pattern, excluding the current branch
+          DUPLICATES=$(echo "$ALL_BRANCHES" | grep -E "^issue-${ISSUE_NUMBER}_" | grep -v -x "${BRANCH_NAME}" || true)
+
+          if [[ -n "${DUPLICATES}" ]]; then
+            echo "❌ Duplicate branch(es) found for issue-${ISSUE_NUMBER}:"
+            echo "${DUPLICATES}"
+            echo "Policy: only one branch per issue number is allowed. Failing the run."
             exit 1
           else
-            echo "❓ Unexpected issue state: $ISSUE_STATE"
+            echo "✅ No other branches found for issue-${ISSUE_NUMBER}."
+          fi
+
+      - name: Check issue exists and is open, then label
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ISSUE_NUMBER="${ISSUE_NUMBER}"
+          BRANCH_NAME="${BRANCH_NAME}"
+          echo "🔎 Checking issue #${ISSUE_NUMBER} in ${GITHUB_REPOSITORY}..."
+          RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}")
+
+          ISSUE_STATE=$(echo "$RESPONSE" | jq -r '.state // empty')
+          if [[ -z "$ISSUE_STATE" ]]; then
+            echo "❌ Issue #${ISSUE_NUMBER} does not exist in ${GITHUB_REPOSITORY}."
             exit 1
           fi
 
-      - name: Check for duplicate issue branches
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "🔎 Checking if another branch with issue-$ISSUE_NUMBER exists..."
-          BRANCHES=$(curl -s \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
-            | jq -r '.[].name')
-
-          # Find all branches with same issue number, excluding current branch
-          DUPLICATES=$(echo "$BRANCHES" | grep -E "^issue-${ISSUE_NUMBER}_" | grep -v "^${BRANCH_NAME}$" || true)
-
-          if [[ -n "$DUPLICATES" ]]; then
-            echo "❌ Another branch already exists with issue-$ISSUE_NUMBER:"
-            echo "$DUPLICATES"
-            exit 1
+          if [[ "$ISSUE_STATE" == "open" ]]; then
+            echo "✅ Issue #${ISSUE_NUMBER} exists and is OPEN."
+            echo "Adding label 'status: development'..."
+            curl -s -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/labels" \
+              -d '{"labels":["status: development"]}' \
+              | jq -r '.[]?.name // "labeling complete"'
           else
-            echo "✅ No duplicate branches found for issue-$ISSUE_NUMBER."
+            echo "⚠️ Issue #${ISSUE_NUMBER} exists but is not open (state=${ISSUE_STATE})."
+            exit 1
           fi
