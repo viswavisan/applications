@@ -66,7 +66,7 @@ jobs:
           name: coverage-report
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@f7c3f6f9c3c6f2f1b3a9c2d4a1e5b6d7c8e9f0a1
+        uses: SonarSource/sonarqube-scan-action@a31c939
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
