@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  contents: read
-  pull-requests: read   # allow SonarCloud to decorate PRs
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -40,6 +36,9 @@ jobs:
 
   scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     needs: test
     steps:
       - name: Checkout code
