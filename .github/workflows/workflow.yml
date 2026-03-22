@@ -49,8 +49,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v7
         with:
           args: >
-            -Dsonar.projectKey=your_project_key
-            -Dsonar.organization=your_org
+            -Dsonar.projectKey=viswavisan_applications
+            -Dsonar.organization=viswavisan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
