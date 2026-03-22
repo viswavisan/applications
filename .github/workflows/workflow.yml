@@ -55,7 +55,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: test   # ensures deploy runs only if tests succeed
+    needs: scan   # ensures deploy runs only if tests succeed
     steps:
       - name: Deploy to Render
         run: |
