@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_smorest import Api
 from Interview_evaluation.app import app as interview_blueprint
+from fit_mafia.app import app as fit_mafia_blueprint
 from migrations import run_alembic_commands
 
 main_app = Flask(__name__)
@@ -40,6 +41,7 @@ def run_alembic():
 
 
 main_app.register_blueprint(interview_blueprint)
+main_app.register_blueprint(fit_mafia_blueprint)
 
 if __name__ == "__main__":
     main_app.run(host='0.0.0.0', port=5000)
