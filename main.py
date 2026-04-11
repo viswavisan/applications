@@ -34,10 +34,14 @@ def page_not_found(e):
     return html, 404
 
 
-@main_app.route("/run_alembic")
+@main_app.route("/run_alembic", methods=['GET'])
 def run_alembic():
     run_alembic_commands.main()
     return "Migration completed", 200
+
+@main_app.route("/health_check", methods=['GET'])
+def run_alembic():
+    return "Service active", 200
 
 
 main_app.register_blueprint(interview_blueprint)
