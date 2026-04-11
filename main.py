@@ -40,7 +40,7 @@ def run_alembic():
     return "Migration completed", 200
 
 @main_app.route("/health_check", methods=['GET'])
-def run_alembic():
+def healthcheck():
     return "Service active", 200
 
 
