@@ -21,7 +21,7 @@
             color: #fff;
             padding-top: 20px;
         }
-        .sidebar button {
+        .sidebar-btn {
             background: none;
             border: none;
             color: #adb5bd;
@@ -31,7 +31,7 @@
             padding: 10px 20px;
             margin-bottom: 5px;
         }
-        .sidebar button:hover, .sidebar button.active {
+        .sidebar-btn:hover, .sidebar-btn.active {
             background-color: #495057;
             color: #fff;
         }
@@ -115,30 +115,54 @@
     </div>
 </div>
 
+<!-- Mobile Sidebar Offcanvas -->
+<div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobileSidebar">
+    <div class="offcanvas-header border-bottom border-secondary">
+        <h5 class="offcanvas-title">Fit Mafia</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0 d-flex flex-column pt-3">
+        <div>
+            <button class="sidebar-btn active" onclick="showSection('dashboard', event); closeOffcanvas()">Dashboard</button>
+            <button class="sidebar-btn" onclick="showSection('register', event); closeOffcanvas()">New Member</button>
+            <button class="sidebar-btn" onclick="showSection('members', event); closeOffcanvas()">Member List</button>
+            <button class="sidebar-btn" onclick="showSection('transactions', event); closeOffcanvas()">Transactions</button>
+        </div>
+        <div class="mt-auto mb-3">
+            <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'">Logout</button>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid p-0">
     <div class="row g-0">
-        <!-- Sidebar -->
-        <nav class="col-md-3 col-lg-2 sidebar d-flex flex-column">
+        <!-- Sidebar (Hidden on mobile) -->
+        <nav class="col-md-3 col-lg-2 sidebar d-none d-md-flex flex-column">
             <div>
                 <h4 class="text-center mb-4">Fit Mafia</h4>
-                <button class="active" onclick="showSection('dashboard', event)">Dashboard</button>
-                <button onclick="showSection('register', event)">New Member</button>
-                <button onclick="showSection('members', event)">Member List</button>
-                <button onclick="showSection('transactions', event)">Transactions</button>
+                <button class="sidebar-btn active" onclick="showSection('dashboard', event)">Dashboard</button>
+                <button class="sidebar-btn" onclick="showSection('register', event)">New Member</button>
+                <button class="sidebar-btn" onclick="showSection('members', event)">Member List</button>
+                <button class="sidebar-btn" onclick="showSection('transactions', event)">Transactions</button>
             </div>
             <div class="mt-auto mb-3">
-                <button class="text-danger" onclick="window.location.href='/logout'">Logout</button>
+                <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'">Logout</button>
             </div>
         </nav>
 
         <!-- Main Content -->
-        <main class="col-md-9 col-lg-10 content">
+        <main class="col-12 col-md-9 col-lg-10 content">
             
             <!-- Top Navigation Bar with UserName -->
             <div class="top-navbar">
-                <h5 class="m-0 text-muted" id="page-title">Dashboard</h5>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-secondary d-md-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                        &#9776;
+                    </button>
+                    <h5 class="m-0 text-muted" id="page-title">Dashboard</h5>
+                </div>
                 <div class="user-profile">
-                    <span class="text-secondary">Welcome,</span>
+                    <span class="text-secondary d-none d-sm-inline">Welcome,</span>
                     <strong class="text-dark">{{ current_user.username | default('Admin User') }}</strong>
                     <div class="user-avatar">
                         {{ (current_user.username | default('A'))[0] | upper }}
@@ -184,11 +208,11 @@
                     <div class="card-body">
                         <form id="memberForm" action="/register_member" method="POST" enctype="multipart/form-data">
                             <div class="row mb-3">
-                                <div class="col">
+                                <div class="col-12 col-md-6 mb-3 mb-md-0">
                                     <label for="firstName" class="form-label">First Name</label>
                                     <input type="text" class="form-control" id="firstName" name="first_name" required>
                                 </div>
-                                <div class="col">
+                                <div class="col-12 col-md-6">
                                     <label for="lastName" class="form-label">Last Name</label>
                                     <input type="text" class="form-control" id="lastName" name="last_name" required>
                                 </div>
@@ -199,25 +223,25 @@
                                 <input type="tel" class="form-control" id="mobile_number" name="mobile_number" required>
                             </div>
                             <div class="row mb-3">
-                                <div class="col">
+                                <div class="col-12 col-md-6 mb-3 mb-md-0">
                                     <label for="dob" class="form-label">Date of Birth</label>
                                     <input type="date" class="form-control" id="dob" name="dob">
                                 </div>
-                                <div class="col">
+                                <div class="col-12 col-md-6">
                                     <label for="joining_date" class="form-label">Joining Date</label>
                                     <input type="date" class="form-control" id="joining_date" name="joining_date">
                                 </div>
                             </div>
                             <div class="row mb-3">
-                                <div class="col">
+                                <div class="col-12 col-md-4 mb-3 mb-md-0">
                                     <label for="height" class="form-label">Height (cm)</label>
                                     <input type="text" class="form-control" id="height" name="height">
                                 </div>
-                                <div class="col">
+                                <div class="col-12 col-md-4 mb-3 mb-md-0">
                                     <label for="weight" class="form-label">Weight (kg)</label>
                                     <input type="text" class="form-control" id="weight" name="weight">
                                 </div>
-                                <div class="col">
+                                <div class="col-12 col-md-4">
                                     <label for="bmi" class="form-label">BMI</label>
                                     <input type="text" class="form-control" id="bmi" name="bmi">
                                 </div>
@@ -235,9 +259,9 @@
                                 <label for="photo" class="form-label">Photo (Leave empty to keep existing)</label>
                                 <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
                             </div>
-                            <div class="d-flex gap-2">
-                                <button type="submit" id="submitBtn" class="btn btn-primary">Register Member</button>
-                                <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none" onclick="resetForm()">Cancel Edit</button>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="submit" id="submitBtn" class="btn btn-primary w-100 w-sm-auto">Register Member</button>
+                                <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none w-100 w-sm-auto" onclick="resetForm()">Cancel Edit</button>
                             </div>
                         </form>
                     </div>
@@ -292,63 +316,65 @@
 
             <!-- View Member Detail -->
             <div id="viewMemberDetails" class="section">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                     <h2>Member Details</h2>
                     <div>
                         <button id="editMemberBtn" class="btn btn-primary me-2">Edit</button>
-                        <button class="btn btn-secondary" onclick="showSection('members', event)">Back to List</button>
+                        <button class="btn btn-secondary" onclick="showSection('members', event)">Back</button>
                     </div>
                 </div>
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 text-center">
+                            <div class="col-md-4 text-center mb-3 mb-md-0">
                                 <img id="viewPhoto" src="" alt="Member Image" class="view-photo d-none">
                                 <div id="noPhoto" class="view-photo bg-secondary text-white d-flex justify-content-center align-items-center mx-auto d-none">
                                     No Photo
                                 </div>
                             </div>
                             <div class="col-md-8">
-                                <table class="table table-borderless">
-                                    <tbody>
-                                        <tr>
-                                            <th>First Name:</th>
-                                            <td id="viewFirstName"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Last Name:</th>
-                                            <td id="viewLastName"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Mobile Number:</th>
-                                            <td id="viewMobileNumber"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Date of Birth:</th>
-                                            <td id="viewDob"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Joining Date:</th>
-                                            <td id="viewJoiningDate"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Height (cm):</th>
-                                            <td id="viewHeight"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Weight (kg):</th>
-                                            <td id="viewWeight"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>BMI:</th>
-                                            <td id="viewBmi"></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Subscription:</th>
-                                            <td id="viewSubscription"></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless">
+                                        <tbody>
+                                            <tr>
+                                                <th>First Name:</th>
+                                                <td id="viewFirstName"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Last Name:</th>
+                                                <td id="viewLastName"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Mobile Number:</th>
+                                                <td id="viewMobileNumber"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Date of Birth:</th>
+                                                <td id="viewDob"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Joining Date:</th>
+                                                <td id="viewJoiningDate"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Height (cm):</th>
+                                                <td id="viewHeight"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Weight (kg):</th>
+                                                <td id="viewWeight"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>BMI:</th>
+                                                <td id="viewBmi"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Subscription:</th>
+                                                <td id="viewSubscription"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -360,36 +386,38 @@
                 <h2>Transaction Details</h2>
                 <div class="card mt-4 shadow-sm">
                     <div class="card-body">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Txn ID</th>
-                                    <th>Date</th>
-                                    <th>Member Name</th>
-                                    <th>Amount</th>
-                                    <th>Payment Method</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>TXN001</td>
-                                    <td>2023-10-25</td>
-                                    <td>John Doe</td>
-                                    <td>$250</td>
-                                    <td>Credit Card</td>
-                                    <td><span class="badge bg-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>TXN002</td>
-                                    <td>2023-10-26</td>
-                                    <td>Alice Johnson</td>
-                                    <td>$50</td>
-                                    <td>Cash</td>
-                                    <td><span class="badge bg-success">Completed</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Txn ID</th>
+                                        <th>Date</th>
+                                        <th>Member Name</th>
+                                        <th>Amount</th>
+                                        <th>Payment Method</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>TXN001</td>
+                                        <td>2023-10-25</td>
+                                        <td>John Doe</td>
+                                        <td>$250</td>
+                                        <td>Credit Card</td>
+                                        <td><span class="badge bg-success">Completed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>TXN002</td>
+                                        <td>2023-10-26</td>
+                                        <td>Alice Johnson</td>
+                                        <td>$50</td>
+                                        <td>Cash</td>
+                                        <td><span class="badge bg-success">Completed</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -403,6 +431,16 @@
 <script>
     // Global variable to store current member data for editing
     let currentMemberData = null;
+
+    function closeOffcanvas() {
+        const offcanvasEl = document.getElementById('mobileSidebar');
+        if (offcanvasEl) {
+            const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+            if (offcanvas) {
+                offcanvas.hide();
+            }
+        }
+    }
 
     function showSection(sectionId, event) {
         if (event) event.preventDefault();
@@ -433,7 +471,7 @@
         });
 
         // Remove active class from all buttons
-        const buttons = document.querySelectorAll('.sidebar button');
+        const buttons = document.querySelectorAll('.sidebar-btn');
         buttons.forEach(btn => {
             btn.classList.remove('active');
         });
@@ -441,13 +479,8 @@
         // Show the selected section
         document.getElementById(sectionId).classList.add('active');
 
-        // Add active class to the clicked button, if navigating from sidebar
-        if (event && event.target.tagName === 'BUTTON' && event.target.closest('.sidebar')) {
-            event.target.classList.add('active');
-        } else if (sectionId === 'register' && currentMemberData) {
-            // If programmatically navigating to register for editing, highlight the New Member tab
-            document.querySelector("button[onclick=\"showSection('register', event)\"]").classList.add('active');
-        }
+        // Add active class to corresponding buttons (both desktop and mobile menus)
+        document.querySelectorAll(`.sidebar-btn[onclick*="showSection('${sectionId}'"]`).forEach(b => b.classList.add('active'));
     }
 
     function searchByMobile() {
