@@ -7,8 +7,8 @@ Base = declarative_base()
 class Database:
     def __init__(self, db_url= None):
         if db_url is None:
-            db_url = "postgresql://postgres.mpxtvjplufxevfbtzmul:Anjpv3507h!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
-
+            local_db_path = f"sqlite:///{os.path.join(os.path.abspath(os.path.dirname(__file__)), 'fitmafia.db')}"
+            db_url = os.getenv("DATABASE_URL", local_db_path)
         self.engine = create_engine(db_url)
         # scoped_session creates a thread-local session
         self.session = scoped_session(sessionmaker(bind=self.engine))
