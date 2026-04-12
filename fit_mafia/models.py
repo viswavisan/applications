@@ -42,6 +42,17 @@ class Member(Base):
     subscription = Column(String, nullable=True)
     joining_date = Column(String, nullable=True)
     photo = Column(String, nullable=True)
+    status = Column(String, nullable=True, default='active')
+
+class Transaction(Base):
+    __tablename__ = 'transaction'
+    __table_args__ = {'schema': 'fitmafia'}
+    transaction_id = Column(String, primary_key=True)
+    member_name = Column(String, nullable=True)
+    date = Column(String, nullable=True)
+    amount = Column(String, nullable=True)
+    payment_method = Column(String, nullable=True)
+    status = Column(String, nullable=True)
 
 
 db = Database()

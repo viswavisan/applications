@@ -178,7 +178,7 @@
                         <div class="card text-white bg-primary mb-3 shadow">
                             <div class="card-body">
                                 <h5 class="card-title">Total Members</h5>
-                                <p class="card-text fs-2">150</p>
+                                <p class="card-text fs-2">{{ total_members }}</p>
                             </div>
                         </div>
                     </div>
@@ -186,7 +186,7 @@
                         <div class="card text-white bg-success mb-3 shadow">
                             <div class="card-body">
                                 <h5 class="card-title">Active Members</h5>
-                                <p class="card-text fs-2">120</p>
+                                <p class="card-text fs-2">{{ active_members }}</p>
                             </div>
                         </div>
                     </div>
@@ -194,7 +194,7 @@
                         <div class="card text-white bg-warning mb-3 shadow">
                             <div class="card-body">
                                 <h5 class="card-title">Monthly Revenue</h5>
-                                <p class="card-text fs-2">$4,500</p>
+                                <p class="card-text fs-2">{{ total_revenue }}</p>
                             </div>
                         </div>
                     </div>
@@ -302,7 +302,13 @@
                                     <td>{{ member.first_name }}</td>
                                     <td>{{ member.last_name }}</td>
                                     <td>{{ member.subscription }}</td>
-                                    <td><span class="badge bg-success">Active</span></td>
+                                    <td>
+                                        {% if member.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ member.status | default('Unknown') }}</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <button type="button" class="btn btn-sm btn-info" onclick="viewMember('{{ member.mobile_number }}')">View</button>
                                     </td>
@@ -383,7 +389,10 @@
 
             <!-- Transactions -->
             <div id="transactions" class="section">
-                <h2>Transaction Details</h2>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Transaction Details</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTransactionModal">New Transaction</button>
+                </div>
                 <div class="card mt-4 shadow-sm">
                     <div class="card-body">
                         <div class="table-responsive">
@@ -399,22 +408,28 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {% for txn in transactions %}
                                     <tr>
-                                        <td>TXN001</td>
-                                        <td>2023-10-25</td>
-                                        <td>John Doe</td>
-                                        <td>$250</td>
-                                        <td>Credit Card</td>
-                                        <td><span class="badge bg-success">Completed</span></td>
+                                        <td>{{ txn.transaction_id }}</td>
+                                        <td>{{ txn.date }}</td>
+                                        <td>{{ txn.member_name }}</td>
+                                        <td>{{ txn.amount }}</td>
+                                        <td>{{ txn.payment_method }}</td>
+                                        <td>
+                                            {% if txn.status == 'Completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif txn.status == 'Pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ txn.status | default('Unknown') }}</span>
+                                            {% endif %}
+                                        </td>
                                     </tr>
+                                    {% else %}
                                     <tr>
-                                        <td>TXN002</td>
-                                        <td>2023-10-26</td>
-                                        <td>Alice Johnson</td>
-                                        <td>$50</td>
-                                        <td>Cash</td>
-                                        <td><span class="badge bg-success">Completed</span></td>
+                                        <td colspan="6" class="text-center">No transactions found.</td>
                                     </tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>
@@ -424,6 +439,53 @@
 
         </main>
     </div>
+</div>
+
+<!-- New Transaction Modal -->
+<div class="modal fade" id="newTransactionModal" tabindex="-1" aria-labelledby="newTransactionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newTransactionModalLabel">Record New Transaction</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="transactionForm" action="/register_transaction" method="POST">
+          <div class="mb-3">
+            <label for="txnMemberName" class="form-label">Member Name</label>
+            <input type="text" class="form-control" id="txnMemberName" name="member_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="txnDate" class="form-label">Date</label>
+            <input type="date" class="form-control" id="txnDate" name="date" required>
+          </div>
+          <div class="mb-3">
+            <label for="txnAmount" class="form-label">Amount</label>
+            <input type="text" class="form-control" id="txnAmount" name="amount" placeholder="e.g. 50" required>
+          </div>
+          <div class="mb-3">
+            <label for="txnPaymentMethod" class="form-label">Payment Method</label>
+            <select class="form-select" id="txnPaymentMethod" name="payment_method" required>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="txnStatus" class="form-label">Status</label>
+            <select class="form-select" id="txnStatus" name="status" required>
+                <option value="Completed">Completed</option>
+                <option value="Pending">Pending</option>
+            </select>
+          </div>
+          <div class="d-grid">
+              <button type="submit" class="btn btn-primary">Save Transaction</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Bootstrap JS -->

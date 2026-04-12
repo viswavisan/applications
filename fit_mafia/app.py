@@ -3,7 +3,7 @@ import os
 import uuid
 import base64
 from flask import render_template, Blueprint, request, Response, session, redirect, url_for, jsonify
-from fit_mafia.models import db, Session, Member
+from fit_mafia.models import db, Session, Member, Transaction
 from sqlalchemy.orm import class_mapper
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
@@ -72,15 +72,44 @@ def require_auth():
 
 @app.route('/fitmafia', methods=['GET'])
 def fitmafia():
+    total_members = 0
+    active_members = 0
+    total_revenue = 0
+    transactions = []
+    
     try:
         members = db.session.query(Member).all()
+        total_members = len(members)
+        active_members = len([m for m in members if m.status == 'active'])
+        
+        transactions = db.session.query(Transaction).all()
+        for t in transactions:
+            try:
+                # Remove common currency symbols and convert to float
+                amt_str = str(t.amount).replace('₹', '').replace(',', '').strip()
+                total_revenue += float(amt_str) if amt_str else 0.0
+            except ValueError:
+                pass
+                
     except Exception as e:
         db.session.rollback()
         members = []
-        print(f"Error fetching members: {e}")
+        transactions = []
+        print(f"Error fetching data: {e}")
+        
+    # Format the revenue
+    formatted_revenue = f"₹{total_revenue:,.2f}"
+
     # Pass current_user dict (we use auth username from request.authorization)
     current_user = {"username": request.authorization.username if request.authorization else "Admin"}
-    return render_template('test.html', members=members, current_user=current_user)
+    
+    return render_template('test.html', 
+                           members=members, 
+                           current_user=current_user, 
+                           total_members=total_members, 
+                           active_members=active_members,
+                           total_revenue=formatted_revenue,
+                           transactions=transactions)
 
 @app.route('/register_member', methods=['POST'])
 def register_member():
@@ -120,13 +149,43 @@ def register_member():
                 bmi=bmi,
                 subscription=subscription,
                 joining_date=joining_date,
-                photo=photo
+                photo=photo,
+                status='active' # Set as active by default
             )
             db.session.merge(new_member)
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             print(f"Error registering/updating member: {e}")
+
+    return redirect(url_for('fit_mafia.fitmafia'))
+
+@app.route('/register_transaction', methods=['POST'])
+def register_transaction():
+    transaction_id = request.form.get('transaction_id')
+    member_name = request.form.get('member_name')
+    date = request.form.get('date')
+    amount = request.form.get('amount')
+    payment_method = request.form.get('payment_method')
+    status = request.form.get('status')
+    
+    if not transaction_id:
+        transaction_id = f"TXN{str(uuid.uuid4())[:8].upper()}"
+
+    try:
+        new_txn = Transaction(
+            transaction_id=transaction_id,
+            member_name=member_name,
+            date=date,
+            amount=amount,
+            payment_method=payment_method,
+            status=status
+        )
+        db.session.merge(new_txn)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error registering transaction: {e}")
 
     return redirect(url_for('fit_mafia.fitmafia'))
 
