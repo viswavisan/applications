@@ -1,10 +1,15 @@
 from flask import Flask
 from flask_smorest import Api
+import os
+from datetime import timedelta
 from Interview_evaluation.app import app as interview_blueprint
 from fit_mafia.app import app as fit_mafia_blueprint
 from migrations import run_alembic_commands
 
 main_app = Flask(__name__)
+
+main_app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
+main_app.permanent_session_lifetime = timedelta(minutes=30)
 
 main_app.config["API_TITLE"] = "Interview Evaluation API"
 main_app.config["API_VERSION"] = "v1"

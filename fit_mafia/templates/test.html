@@ -9,6 +9,11 @@
     <style>
         body {
             background-color: #f8f9fa;
+            /* Gym related background image */
+            background-image: linear-gradient(rgba(248, 249, 250, 0.9), rgba(248, 249, 250, 0.9)), url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
         }
         .sidebar {
             height: 100vh;
@@ -39,30 +44,114 @@
         .section.active {
             display: block;
         }
+        /* Thumbnail styles */
+        .member-thumbnail {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .view-photo {
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        /* Loading Overlay styles */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        /* Top Navigation Bar */
+        .top-navbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #dee2e6;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,.08);
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="d-none">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
         <!-- Sidebar -->
-        <nav class="col-md-3 col-lg-2 sidebar">
-            <h4 class="text-center mb-4">Fit Mafia</h4>
-            <button class="active" onclick="showSection('dashboard', event)">Dashboard</button>
-            <button onclick="showSection('register', event)">New Member</button>
-            <button onclick="showSection('members', event)">Member List</button>
-            <button onclick="showSection('transactions', event)">Transactions</button>
+        <nav class="col-md-3 col-lg-2 sidebar d-flex flex-column">
+            <div>
+                <h4 class="text-center mb-4">Fit Mafia</h4>
+                <button class="active" onclick="showSection('dashboard', event)">Dashboard</button>
+                <button onclick="showSection('register', event)">New Member</button>
+                <button onclick="showSection('members', event)">Member List</button>
+                <button onclick="showSection('transactions', event)">Transactions</button>
+            </div>
+            <div class="mt-auto mb-3">
+                <button class="text-danger" onclick="window.location.href='/logout'">Logout</button>
+            </div>
         </nav>
 
         <!-- Main Content -->
         <main class="col-md-9 col-lg-10 content">
             
+            <!-- Top Navigation Bar with User Name -->
+            <div class="top-navbar">
+                <h5 class="m-0 text-muted" id="page-title">Dashboard</h5>
+                <div class="user-profile">
+                    <span class="text-secondary">Welcome,</span>
+                    <strong class="text-dark">{{ current_user.username | default('Admin User') }}</strong>
+                    <div class="user-avatar">
+                        {{ (current_user.username | default('A'))[0] | upper }}
+                    </div>
+                </div>
+            </div>
+
             <!-- Dashboard Overview -->
             <div id="dashboard" class="section active">
-                <h2>Welcome to Fit Mafia Dashboard</h2>
+                <h2>Overview</h2>
                 <div class="row mt-4">
                     <div class="col-md-4">
-                        <div class="card text-white bg-primary mb-3">
+                        <div class="card text-white bg-primary mb-3 shadow">
                             <div class="card-body">
                                 <h5 class="card-title">Total Members</h5>
                                 <p class="card-text fs-2">150</p>
@@ -70,7 +159,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card text-white bg-success mb-3">
+                        <div class="card text-white bg-success mb-3 shadow">
                             <div class="card-body">
                                 <h5 class="card-title">Active Members</h5>
                                 <p class="card-text fs-2">120</p>
@@ -78,7 +167,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card text-white bg-warning mb-3">
+                        <div class="card text-white bg-warning mb-3 shadow">
                             <div class="card-body">
                                 <h5 class="card-title">Monthly Revenue</h5>
                                 <p class="card-text fs-2">$4,500</p>
@@ -88,40 +177,68 @@
                 </div>
             </div>
 
-            <!-- New Member Registration -->
+            <!-- New Member Registration / Edit -->
             <div id="register" class="section">
-                <h2>New Member Registration</h2>
-                <div class="card mt-4">
+                <h2 id="registerFormTitle">New Member Registration</h2>
+                <div class="card mt-4 shadow-sm">
                     <div class="card-body">
-                        <form>
+                        <form id="memberForm" action="/register_member" method="POST" enctype="multipart/form-data">
                             <div class="row mb-3">
                                 <div class="col">
                                     <label for="firstName" class="form-label">First Name</label>
-                                    <input type="text" class="form-control" id="firstName" required>
+                                    <input type="text" class="form-control" id="firstName" name="first_name" required>
                                 </div>
                                 <div class="col">
                                     <label for="lastName" class="form-label">Last Name</label>
-                                    <input type="text" class="form-control" id="lastName" required>
+                                    <input type="text" class="form-control" id="lastName" name="last_name" required>
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email address</label>
-                                <input type="email" class="form-control" id="email" required>
+                                <label for="mobile_number" class="form-label">Mobile Number</label>
+                                <!-- Using readonly on edit so they can't change primary key -->
+                                <input type="tel" class="form-control" id="mobile_number" name="mobile_number" required>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="dob" class="form-label">Date of Birth</label>
+                                    <input type="date" class="form-control" id="dob" name="dob">
+                                </div>
+                                <div class="col">
+                                    <label for="joining_date" class="form-label">Joining Date</label>
+                                    <input type="date" class="form-control" id="joining_date" name="joining_date">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="height" class="form-label">Height (cm)</label>
+                                    <input type="text" class="form-control" id="height" name="height">
+                                </div>
+                                <div class="col">
+                                    <label for="weight" class="form-label">Weight (kg)</label>
+                                    <input type="text" class="form-control" id="weight" name="weight">
+                                </div>
+                                <div class="col">
+                                    <label for="bmi" class="form-label">BMI</label>
+                                    <input type="text" class="form-control" id="bmi" name="bmi">
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="phone" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phone" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="plan" class="form-label">Membership Plan</label>
-                                <select class="form-select" id="plan">
-                                    <option value="1">1 Month - $50</option>
-                                    <option value="3">3 Months - $130</option>
-                                    <option value="6">6 Months - $250</option>
-                                    <option value="12">12 Months - $450</option>
+                                <label for="subscription" class="form-label">Membership Plan</label>
+                                <select class="form-select" id="subscription" name="subscription">
+                                    <option value="1 Month">1 Month - $50</option>
+                                    <option value="3 Months">3 Months - $130</option>
+                                    <option value="6 Months">6 Months - $250</option>
+                                    <option value="12 Months">12 Months - $450</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary">Register Member</button>
+                            <div class="mb-3">
+                                <label for="photo" class="form-label">Photo (Leave empty to keep existing)</label>
+                                <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" id="submitBtn" class="btn btn-primary">Register Member</button>
+                                <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none" onclick="resetForm()">Cancel Edit</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -130,38 +247,110 @@
             <!-- Member List -->
             <div id="members" class="section">
                 <h2>Member List</h2>
-                <div class="card mt-4">
-                    <div class="card-body">
-                        <table class="table table-striped">
+                <div class="mb-3 mt-3">
+                    <input type="text" id="mobileSearch" class="form-control" placeholder="Search by Mobile Number..." onkeyup="searchByMobile()">
+                </div>
+                <div class="card mt-4 shadow-sm">
+                    <div class="card-body" style="overflow-x: auto;">
+                        <table class="table table-striped" id="membersTable">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Plan</th>
+                                    <th>Photo</th>
+                                    <th>Mobile Number</th>
+                                    <th>First Name</th>
+                                    <th>Last Name</th>
+                                    <th>Subscription</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for member in members %}
                                 <tr>
-                                    <td>101</td>
-                                    <td>John Doe</td>
-                                    <td>john@example.com</td>
-                                    <td>6 Months</td>
+                                    <td>
+                                        {% if member.photo %}
+                                            <img src="{{ member.photo }}" alt="Photo" class="member-thumbnail">
+                                        {% else %}
+                                            <div class="member-thumbnail bg-secondary d-flex justify-content-center align-items-center text-white">N/A</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ member.mobile_number }}</td>
+                                    <td>{{ member.first_name }}</td>
+                                    <td>{{ member.last_name }}</td>
+                                    <td>{{ member.subscription }}</td>
                                     <td><span class="badge bg-success">Active</span></td>
-                                    <td><button type="button" class="btn btn-sm btn-info">View</button></td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info" onclick="viewMember('{{ member.mobile_number }}')">View</button>
+                                    </td>
                                 </tr>
-                                <tr>
-                                    <td>102</td>
-                                    <td>Jane Smith</td>
-                                    <td>jane@example.com</td>
-                                    <td>1 Month</td>
-                                    <td><span class="badge bg-danger">Expired</span></td>
-                                    <td><button type="button" class="btn btn-sm btn-info">View</button></td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Member Detail -->
+            <div id="viewMemberDetails" class="section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Member Details</h2>
+                    <div>
+                        <button id="editMemberBtn" class="btn btn-primary me-2">Edit</button>
+                        <button class="btn btn-secondary" onclick="showSection('members', event)">Back to List</button>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <img id="viewPhoto" src="" alt="Member Photo" class="view-photo d-none">
+                                <div id="noPhoto" class="view-photo bg-secondary text-white d-flex justify-content-center align-items-center mx-auto d-none">
+                                    No Photo
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <th>First Name:</th>
+                                            <td id="viewFirstName"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Last Name:</th>
+                                            <td id="viewLastName"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Mobile Number:</th>
+                                            <td id="viewMobileNumber"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Date of Birth:</th>
+                                            <td id="viewDob"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Joining Date:</th>
+                                            <td id="viewJoiningDate"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Height (cm):</th>
+                                            <td id="viewHeight"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Weight (kg):</th>
+                                            <td id="viewWeight"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>BMI:</th>
+                                            <td id="viewBmi"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Subscription:</th>
+                                            <td id="viewSubscription"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -169,7 +358,7 @@
             <!-- Transactions -->
             <div id="transactions" class="section">
                 <h2>Transaction Details</h2>
-                <div class="card mt-4">
+                <div class="card mt-4 shadow-sm">
                     <div class="card-body">
                         <table class="table table-bordered">
                             <thead>
@@ -212,9 +401,31 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Global variable to store current member data for editing
+    let currentMemberData = null;
+
     function showSection(sectionId, event) {
-        event.preventDefault();
-        
+        if (event) event.preventDefault();
+
+        // Update page title in top navbar
+        const pageTitles = {
+            'dashboard': 'Dashboard',
+            'register': 'New Member',
+            'members': 'Member List',
+            'transactions': 'Transactions',
+            'viewMemberDetails': 'Member Details'
+        };
+
+        const pageTitleElement = document.getElementById('page-title');
+        if (pageTitleElement && pageTitles[sectionId]) {
+            pageTitleElement.innerText = pageTitles[sectionId];
+        }
+
+        // If navigating away from register, clear it (unless editing)
+        if (sectionId !== 'register' && document.getElementById('mobile_number').hasAttribute('readonly')) {
+            resetForm();
+        }
+
         // Hide all sections
         const sections = document.querySelectorAll('.section');
         sections.forEach(section => {
@@ -230,9 +441,131 @@
         // Show the selected section
         document.getElementById(sectionId).classList.add('active');
 
-        // Add active class to the clicked button
-        if (event) {
+        // Add active class to the clicked button, if navigating from sidebar
+        if (event && event.target.tagName === 'BUTTON' && event.target.closest('.sidebar')) {
             event.target.classList.add('active');
+        } else if (sectionId === 'register' && currentMemberData) {
+            // If programmatically navigating to register for editing, highlight the New Member tab
+            document.querySelector("button[onclick=\"showSection('register', event)\"]").classList.add('active');
+        }
+    }
+
+    function searchByMobile() {
+        const input = document.getElementById('mobileSearch');
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById('membersTable');
+        const tr = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < tr.length; i++) {
+            const td = tr[i].getElementsByTagName('td')[1];
+            if (td) {
+                const txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.remove('d-none');
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.add('d-none');
+    }
+
+    async function viewMember(mobileNumber) {
+        showLoading();
+        try {
+            const response = await fetch(`/api/member/${mobileNumber}`);
+            if (!response.ok) {
+                alert('Member not found');
+                return;
+            }
+            const data = await response.json();
+            currentMemberData = data; // Save for editing
+
+            // Populate data in the view section
+            document.getElementById('viewFirstName').innerText = data.first_name || 'N/A';
+            document.getElementById('viewLastName').innerText = data.last_name || 'N/A';
+            document.getElementById('viewMobileNumber').innerText = data.mobile_number || 'N/A';
+            document.getElementById('viewDob').innerText = data.dob || 'N/A';
+            document.getElementById('viewJoiningDate').innerText = data.joining_date || 'N/A';
+            document.getElementById('viewHeight').innerText = data.height || 'N/A';
+            document.getElementById('viewWeight').innerText = data.weight || 'N/A';
+            document.getElementById('viewBmi').innerText = data.bmi || 'N/A';
+            document.getElementById('viewSubscription').innerText = data.subscription || 'N/A';
+
+            // Handle Photo display
+            const photoEl = document.getElementById('viewPhoto');
+            const noPhotoEl = document.getElementById('noPhoto');
+            if (data.photo) {
+                photoEl.src = data.photo;
+                photoEl.classList.remove('d-none');
+                noPhotoEl.classList.add('d-none');
+            } else {
+                photoEl.classList.add('d-none');
+                noPhotoEl.classList.remove('d-none');
+            }
+
+            // Setup Edit Button
+            document.getElementById('editMemberBtn').onclick = () => editMember();
+
+            showSection('viewMemberDetails');
+        } catch (error) {
+            console.error('Error fetching member details:', error);
+            alert('Error loading member details.');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function editMember() {
+        if (!currentMemberData) return;
+
+        // Populate the form with currentMemberData
+        document.getElementById('firstName').value = currentMemberData.first_name || '';
+        document.getElementById('lastName').value = currentMemberData.last_name || '';
+        document.getElementById('mobile_number').value = currentMemberData.mobile_number || '';
+        document.getElementById('mobile_number').setAttribute('readonly', true); // Prevent PK change
+        document.getElementById('dob').value = currentMemberData.dob || '';
+        document.getElementById('joining_date').value = currentMemberData.joining_date || '';
+        document.getElementById('height').value = currentMemberData.height || '';
+        document.getElementById('weight').value = currentMemberData.weight || '';
+        document.getElementById('bmi').value = currentMemberData.bmi || '';
+
+        if (currentMemberData.subscription) {
+            document.getElementById('subscription').value = currentMemberData.subscription;
+        }
+
+        // Change Title & Buttons
+        document.getElementById('registerFormTitle').innerText = "Edit Member Details";
+        document.getElementById('submitBtn').innerText = "Update Member";
+        document.getElementById('cancelEditBtn').classList.remove('d-none');
+
+        // Show the registration form
+        showSection('register');
+    }
+
+    function resetForm() {
+        // Reset form fields
+        document.getElementById('memberForm').reset();
+
+        // Remove readonly from mobile number
+        document.getElementById('mobile_number').removeAttribute('readonly');
+
+        // Reset UI labels and buttons
+        document.getElementById('registerFormTitle').innerText = "New Member Registration";
+        document.getElementById('submitBtn').innerText = "Register Member";
+        document.getElementById('cancelEditBtn').classList.add('d-none');
+        currentMemberData = null;
+
+        // If called explicitly via Cancel button, go back to Member list or Dashboard
+        if(event && event.target.id === 'cancelEditBtn') {
+           showSection('members');
         }
     }
 </script>
