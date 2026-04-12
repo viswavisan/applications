@@ -36,7 +36,7 @@ def require_auth():
         return None
 
     auth = request.authorization
-    if not auth or auth.password != "password" or auth.username != "admin1":
+    if not auth or auth.password != "prashanth" or auth.username != "prashanth":
         return Response(
             'Could not verify your access level for that URL.\n'
             'You have to login with proper credentials', 401,
