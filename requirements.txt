@@ -6,3 +6,4 @@ pytest
 werkzeug
 alembic
 psycopg2
+python-dateutil
