@@ -36,19 +36,25 @@ class Member(Base):
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     dob = Column(String, nullable=True)
+    gender = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    address = Column(String, nullable=True)
     height = Column(String, nullable=True)
     weight = Column(String, nullable=True)
     bmi = Column(String, nullable=True)
     subscription = Column(String, nullable=True)
     joining_date = Column(String, nullable=True)
+    subscription_start_date = Column(String, nullable=True)
+    subscription_end_date = Column(String, nullable=True)
     photo = Column(String, nullable=True)
-    status = Column(String, nullable=True, default='active')
+    status = Column(String, nullable=True, default='expire')
 
 class Transaction(Base):
     __tablename__ = 'transaction'
     __table_args__ = {'schema': 'fitmafia'}
     transaction_id = Column(String, primary_key=True)
     member_name = Column(String, nullable=True)
+    mobile_number = Column(String, nullable=True)
     date = Column(String, nullable=True)
     amount = Column(String, nullable=True)
     payment_method = Column(String, nullable=True)

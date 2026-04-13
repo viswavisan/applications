@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fit Mafia Dashboard</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/69/69840.png">
     <!-- Bootstrap CSS for styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body {
             background-color: #f8f9fa;
@@ -20,6 +24,8 @@
             background-color: #343a40;
             color: #fff;
             padding-top: 20px;
+            position: fixed;
+            overflow-y: auto;
         }
         .sidebar-btn {
             background: none;
@@ -37,6 +43,13 @@
         }
         .content {
             padding: 20px;
+            margin-left: 16.66667%; /* Offset for col-md-2 sidebar */
+        }
+        /* Adjust for smaller screens where sidebar is hidden */
+        @media (max-width: 767.98px) {
+            .content {
+                margin-left: 0;
+            }
         }
         .section {
             display: none;
@@ -104,6 +117,15 @@
             align-items: center;
             font-weight: bold;
         }
+
+        .clickable-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .clickable-card:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -118,15 +140,17 @@
 <!-- Mobile Sidebar Offcanvas -->
 <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobileSidebar">
     <div class="offcanvas-header border-bottom border-secondary">
-        <h5 class="offcanvas-title">Fit Mafia</h5>
+        <h5 class="offcanvas-title">
+            <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Logo" style="max-height: 40px; margin-right: 10px; border-radius: 4px;">
+        </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-0 d-flex flex-column pt-3">
         <div>
-            <button class="sidebar-btn active" onclick="showSection('dashboard', event); closeOffcanvas()">Dashboard</button>
-            <button class="sidebar-btn" onclick="showSection('register', event); closeOffcanvas()">New Member</button>
-            <button class="sidebar-btn" onclick="showSection('members', event); closeOffcanvas()">Member List</button>
-            <button class="sidebar-btn" onclick="showSection('transactions', event); closeOffcanvas()">Transactions</button>
+            <button class="sidebar-btn active" onclick="showSection('dashboard', event); closeOffcanvas()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</button>
+            <button class="sidebar-btn" onclick="showSection('register', event); closeOffcanvas()"><i class="bi bi-person-plus me-2"></i> New Member</button>
+            <button class="sidebar-btn" onclick="showSection('members', event); closeOffcanvas()"><i class="bi bi-people-fill me-2"></i> Member List</button>
+            <button class="sidebar-btn" onclick="showSection('transactions', event); closeOffcanvas()"><i class="bi bi-receipt me-2"></i> Transactions</button>
         </div>
         <div class="mt-auto mb-3">
             <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'">Logout</button>
@@ -139,14 +163,16 @@
         <!-- Sidebar (Hidden on mobile) -->
         <nav class="col-md-3 col-lg-2 sidebar d-none d-md-flex flex-column">
             <div>
-                <h4 class="text-center mb-4">Fit Mafia</h4>
-                <button class="sidebar-btn active" onclick="showSection('dashboard', event)">Dashboard</button>
-                <button class="sidebar-btn" onclick="showSection('register', event)">New Member</button>
-                <button class="sidebar-btn" onclick="showSection('members', event)">Member List</button>
-                <button class="sidebar-btn" onclick="showSection('transactions', event)">Transactions</button>
+                <div class="text-center mb-4">
+                    <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Logo" style="max-width: 80%; border-radius: 8px;">
+                </div>
+                <button class="sidebar-btn active" onclick="showSection('dashboard', event)"><i class="bi bi-speedometer2 me-2"></i> Dashboard</button>
+                <button class="sidebar-btn" onclick="showSection('register', event)"><i class="bi bi-person-plus me-2"></i> New Member</button>
+                <button class="sidebar-btn" onclick="showSection('members', event)"><i class="bi bi-people-fill me-2"></i> Member List</button>
+                <button class="sidebar-btn" onclick="showSection('transactions', event)"><i class="bi bi-receipt me-2"></i> Transactions</button>
             </div>
             <div class="mt-auto mb-3">
-                <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'">Logout</button>
+                <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'"><i class="bi bi-box-arrow-right me-2"></i> Logout</button>
             </div>
         </nav>
 
@@ -159,7 +185,6 @@
                     <button class="btn btn-outline-secondary d-md-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
                         &#9776;
                     </button>
-                    <h5 class="m-0 text-muted" id="page-title">Dashboard</h5>
                 </div>
                 <div class="user-profile">
                     <span class="text-secondary d-none d-sm-inline">Welcome,</span>
@@ -175,7 +200,7 @@
                 <h2>Overview</h2>
                 <div class="row mt-4">
                     <div class="col-md-4">
-                        <div class="card text-white bg-primary mb-3 shadow">
+                        <div class="card text-white bg-primary mb-3 shadow clickable-card" onclick="filterMembers('')">
                             <div class="card-body">
                                 <h5 class="card-title">Total Members</h5>
                                 <p class="card-text fs-2">{{ total_members }}</p>
@@ -183,7 +208,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card text-white bg-success mb-3 shadow">
+                        <div class="card text-white bg-success mb-3 shadow clickable-card" onclick="filterMembers('active')">
                             <div class="card-body">
                                 <h5 class="card-title">Active Members</h5>
                                 <p class="card-text fs-2">{{ active_members }}</p>
@@ -191,10 +216,10 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card text-white bg-warning mb-3 shadow">
+                        <div class="card text-white bg-secondary mb-3 shadow clickable-card" onclick="filterMembers('expired')">
                             <div class="card-body">
-                                <h5 class="card-title">Monthly Revenue</h5>
-                                <p class="card-text fs-2">{{ total_revenue }}</p>
+                                <h5 class="card-title">Inactive Members</h5>
+                                <p class="card-text fs-2">{{ inactive_members }}</p>
                             </div>
                         </div>
                     </div>
@@ -217,10 +242,16 @@
                                     <input type="text" class="form-control" id="lastName" name="last_name" required>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="mobile_number" class="form-label">Mobile Number</label>
-                                <!-- Using readonly on edit so they can't change primary key -->
-                                <input type="tel" class="form-control" id="mobile_number" name="mobile_number" required>
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-6 mb-3 mb-md-0">
+                                    <label for="mobile_number" class="form-label">Mobile Number</label>
+                                    <!-- Using readonly on edit so they can't change primary key -->
+                                    <input type="tel" class="form-control" id="mobile_number" name="mobile_number" required>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-12 col-md-6 mb-3 mb-md-0">
@@ -228,35 +259,27 @@
                                     <input type="date" class="form-control" id="dob" name="dob">
                                 </div>
                                 <div class="col-12 col-md-6">
+                                    <label for="gender" class="form-label">Gender *</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address *</label>
+                                <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-12">
                                     <label for="joining_date" class="form-label">Joining Date</label>
                                     <input type="date" class="form-control" id="joining_date" name="joining_date">
                                 </div>
                             </div>
-                            <div class="row mb-3">
-                                <div class="col-12 col-md-4 mb-3 mb-md-0">
-                                    <label for="height" class="form-label">Height (cm)</label>
-                                    <input type="text" class="form-control" id="height" name="height">
-                                </div>
-                                <div class="col-12 col-md-4 mb-3 mb-md-0">
-                                    <label for="weight" class="form-label">Weight (kg)</label>
-                                    <input type="text" class="form-control" id="weight" name="weight">
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <label for="bmi" class="form-label">BMI</label>
-                                    <input type="text" class="form-control" id="bmi" name="bmi">
-                                </div>
-                            </div>
                             <div class="mb-3">
-                                <label for="subscription" class="form-label">Membership Plan</label>
-                                <select class="form-select" id="subscription" name="subscription">
-                                    <option value="1 Month">1 Month - $50</option>
-                                    <option value="3 Months">3 Months - $130</option>
-                                    <option value="6 Months">6 Months - $250</option>
-                                    <option value="12 Months">12 Months - $450</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="photo" class="form-label">Photo (Leave empty to keep existing)</label>
+                                <label for="photo" class="form-label">Photo</label>
                                 <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
                             </div>
                             <div class="d-flex flex-wrap gap-2">
@@ -271,8 +294,22 @@
             <!-- Member List -->
             <div id="members" class="section">
                 <h2>Member List</h2>
-                <div class="mb-3 mt-3">
-                    <input type="text" id="mobileSearch" class="form-control" placeholder="Search by Mobile Number..." onkeyup="searchByMobile()">
+                <div class="row mb-3 mt-3 g-2 align-items-center">
+                    <div class="col-md-6 col-12">
+                        <input type="text" id="mobileSearch" class="form-control" placeholder="Search by Mobile Number..." onkeyup="searchByMobile()">
+                    </div>
+                    <div class="col-md-6 col-12 d-flex justify-content-md-end">
+                        <div class="btn-group" role="group" aria-label="Status filter">
+                            <input type="radio" class="btn-check" name="statusFilter" id="filterAll" value="" autocomplete="off" checked onchange="applyMemberFilter()">
+                            <label class="btn btn-outline-primary" for="filterAll">All</label>
+
+                            <input type="radio" class="btn-check" name="statusFilter" id="filterActive" value="active" autocomplete="off" onchange="applyMemberFilter()">
+                            <label class="btn btn-outline-success" for="filterActive">Active</label>
+
+                            <input type="radio" class="btn-check" name="statusFilter" id="filterExpired" value="expired" autocomplete="off" onchange="applyMemberFilter()">
+                            <label class="btn btn-outline-secondary" for="filterExpired">Inactive</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="card mt-4 shadow-sm">
                     <div class="card-body" style="overflow-x: auto;">
@@ -302,7 +339,7 @@
                                     <td>{{ member.first_name }}</td>
                                     <td>{{ member.last_name }}</td>
                                     <td>{{ member.subscription }}</td>
-                                    <td>
+                                    <td class="status-cell" data-status="{{ member.status }}">
                                         {% if member.status == 'active' %}
                                             <span class="badge bg-success">Active</span>
                                         {% else %}
@@ -355,6 +392,18 @@
                                                 <td id="viewMobileNumber"></td>
                                             </tr>
                                             <tr>
+                                                <th>Email Address:</th>
+                                                <td id="viewEmail"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Gender:</th>
+                                                <td id="viewGender"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Address:</th>
+                                                <td id="viewAddress"></td>
+                                            </tr>
+                                            <tr>
                                                 <th>Date of Birth:</th>
                                                 <td id="viewDob"></td>
                                             </tr>
@@ -363,24 +412,85 @@
                                                 <td id="viewJoiningDate"></td>
                                             </tr>
                                             <tr>
-                                                <th>Height (cm):</th>
-                                                <td id="viewHeight"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Weight (kg):</th>
-                                                <td id="viewWeight"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>BMI:</th>
-                                                <td id="viewBmi"></td>
-                                            </tr>
-                                            <tr>
                                                 <th>Subscription:</th>
                                                 <td id="viewSubscription"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Subscription Start:</th>
+                                                <td id="viewSubscriptionStart"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Subscription End:</th>
+                                                <td id="viewSubscriptionEnd"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Status:</th>
+                                                <td><span id="viewStatusBadge" class="badge"></span></td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
+                                <hr>
+                                <h4>Update Vitals</h4>
+                                <form id="vitalsForm" onsubmit="updateVitals(event)">
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label for="vitalHeight" class="form-label">Height (cm)</label>
+                                            <input type="number" step="0.1" class="form-control" id="vitalHeight" required oninput="calculateBMI()">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="vitalWeight" class="form-label">Weight (kg)</label>
+                                            <input type="number" step="0.1" class="form-control" id="vitalWeight" required oninput="calculateBMI()">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="vitalBmi" class="form-label">BMI</label>
+                                            <input type="text" class="form-control" id="vitalBmi" readonly>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">Update Vitals</button>
+                                </form>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4>Renew Subscription</h4>
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="viewMemberTransactions()">View Transactions</button>
+                                </div>
+                                <form id="renewSubscriptionForm" onsubmit="renewSubscription(event)">
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label for="renewSubscriptionPlan" class="form-label">Membership Plan</label>
+                                            <select class="form-select" id="renewSubscriptionPlan" name="subscription" required onchange="calculateRenewEndDate()">
+                                                <option value="1 Month">1 Month</option>
+                                                <option value="3 Months">3 Months</option>
+                                                <option value="6 Months">6 Months</option>
+                                                <option value="12 Months">12 Months</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="renewSubscriptionStartDate" class="form-label">Start Date</label>
+                                            <input type="date" class="form-control" id="renewSubscriptionStartDate" required onchange="calculateRenewEndDate()">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="renewSubscriptionEndDate" class="form-label">End Date</label>
+                                            <input type="date" class="form-control" id="renewSubscriptionEndDate" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="renewAmount" class="form-label">Amount</label>
+                                            <input type="text" class="form-control" id="renewAmount" name="amount" placeholder="e.g. 50" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="renewPaymentMethod" class="form-label">Payment Method</label>
+                                            <select class="form-select" id="renewPaymentMethod" name="payment_method" required>
+                                                <option value="Credit Card">Credit Card</option>
+                                                <option value="Cash">Cash</option>
+                                                <option value="UPI">UPI</option>
+                                                <option value="Bank Transfer">Bank Transfer</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Renew Subscription</button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -391,17 +501,37 @@
             <div id="transactions" class="section">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2>Transaction Details</h2>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTransactionModal">New Transaction</button>
                 </div>
+
+                <!-- Filters for Transactions -->
+                <div class="row mb-3 mt-3 g-2 align-items-end">
+                    <div class="col-md-4 col-12">
+                        <label for="transactionSearch" class="form-label text-muted small">Search Mobile</label>
+                        <input type="text" id="transactionSearch" class="form-control" placeholder="Mobile Number..." onkeyup="filterTransactions()">
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <label for="transactionFromDate" class="form-label text-muted small">From Date</label>
+                        <input type="date" id="transactionFromDate" class="form-control" onchange="filterTransactions()">
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <label for="transactionToDate" class="form-label text-muted small">To Date</label>
+                        <input type="date" id="transactionToDate" class="form-control" onchange="filterTransactions()">
+                    </div>
+                    <div class="col-md-2 col-12">
+                        <button class="btn btn-secondary w-100" onclick="clearTransactionFilters()">Clear Filters</button>
+                    </div>
+                </div>
+
                 <div class="card mt-4 shadow-sm">
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table class="table table-bordered" id="transactionsTable">
                                 <thead>
                                     <tr>
                                         <th>Txn ID</th>
                                         <th>Date</th>
                                         <th>Member Name</th>
+                                        <th>Mobile Number</th>
                                         <th>Amount</th>
                                         <th>Payment Method</th>
                                         <th>Status</th>
@@ -411,8 +541,9 @@
                                     {% for txn in transactions %}
                                     <tr>
                                         <td>{{ txn.transaction_id }}</td>
-                                        <td>{{ txn.date }}</td>
+                                        <td class="txn-date-cell">{{ txn.date }}</td>
                                         <td>{{ txn.member_name }}</td>
+                                        <td class="txn-mobile-cell">{{ txn.mobile_number }}</td>
                                         <td>{{ txn.amount }}</td>
                                         <td>{{ txn.payment_method }}</td>
                                         <td>
@@ -427,7 +558,7 @@
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="6" class="text-center">No transactions found.</td>
+                                        <td colspan="7" class="text-center">No transactions found.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -439,53 +570,6 @@
 
         </main>
     </div>
-</div>
-
-<!-- New Transaction Modal -->
-<div class="modal fade" id="newTransactionModal" tabindex="-1" aria-labelledby="newTransactionModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="newTransactionModalLabel">Record New Transaction</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="transactionForm" action="/register_transaction" method="POST">
-          <div class="mb-3">
-            <label for="txnMemberName" class="form-label">Member Name</label>
-            <input type="text" class="form-control" id="txnMemberName" name="member_name" required>
-          </div>
-          <div class="mb-3">
-            <label for="txnDate" class="form-label">Date</label>
-            <input type="date" class="form-control" id="txnDate" name="date" required>
-          </div>
-          <div class="mb-3">
-            <label for="txnAmount" class="form-label">Amount</label>
-            <input type="text" class="form-control" id="txnAmount" name="amount" placeholder="e.g. 50" required>
-          </div>
-          <div class="mb-3">
-            <label for="txnPaymentMethod" class="form-label">Payment Method</label>
-            <select class="form-select" id="txnPaymentMethod" name="payment_method" required>
-                <option value="Credit Card">Credit Card</option>
-                <option value="Cash">Cash</option>
-                <option value="UPI">UPI</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="txnStatus" class="form-label">Status</label>
-            <select class="form-select" id="txnStatus" name="status" required>
-                <option value="Completed">Completed</option>
-                <option value="Pending">Pending</option>
-            </select>
-          </div>
-          <div class="d-grid">
-              <button type="submit" class="btn btn-primary">Save Transaction</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- Bootstrap JS -->
@@ -504,22 +588,33 @@
         }
     }
 
+    function calculateDatePlusMonths(startDateStr, monthsStr) {
+        if (!startDateStr || !monthsStr) return '';
+        const date = new Date(startDateStr);
+        if (isNaN(date.getTime())) return '';
+
+        const months = parseInt(monthsStr.split(' ')[0]);
+        if (isNaN(months)) return '';
+
+        date.setMonth(date.getMonth() + months);
+        return date.toISOString().split('T')[0];
+    }
+
+    function calculateRenewEndDate() {
+        const startDate = document.getElementById('renewSubscriptionStartDate').value;
+        const plan = document.getElementById('renewSubscriptionPlan').value;
+        const endDateField = document.getElementById('renewSubscriptionEndDate');
+
+        if (startDate && plan) {
+            const newEnd = calculateDatePlusMonths(startDate, plan);
+            if (newEnd) {
+                endDateField.value = newEnd;
+            }
+        }
+    }
+
     function showSection(sectionId, event) {
         if (event) event.preventDefault();
-
-        // Update page title in top navbar
-        const pageTitles = {
-            'dashboard': 'Dashboard',
-            'register': 'New Member',
-            'members': 'Member List',
-            'transactions': 'Transactions',
-            'viewMemberDetails': 'Member Details'
-        };
-
-        const pageTitleElement = document.getElementById('page-title');
-        if (pageTitleElement && pageTitles[sectionId]) {
-            pageTitleElement.innerText = pageTitles[sectionId];
-        }
 
         // If navigating away from register, clear it (unless editing)
         if (sectionId !== 'register' && document.getElementById('mobile_number').hasAttribute('readonly')) {
@@ -543,25 +638,123 @@
 
         // Add active class to corresponding buttons (both desktop and mobile menus)
         document.querySelectorAll(`.sidebar-btn[onclick*="showSection('${sectionId}'"]`).forEach(b => b.classList.add('active'));
+
+        // Set joining date to today if we are opening the register section and not editing
+        if (sectionId === 'register' && !document.getElementById('mobile_number').hasAttribute('readonly')) {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('joining_date').value = today;
+        }
     }
 
-    function searchByMobile() {
-        const input = document.getElementById('mobileSearch');
-        const filter = input.value.toUpperCase();
+    function filterMembers(status) {
+        // Switch to the members section
+        showSection('members');
+
+        // Update the radio button selection
+        if (status === 'active') {
+            document.getElementById('filterActive').checked = true;
+        } else if (status === 'expired') {
+            document.getElementById('filterExpired').checked = true;
+        } else {
+            document.getElementById('filterAll').checked = true;
+        }
+
+        // Apply the filter
+        applyMemberFilter();
+    }
+
+    function applyMemberFilter() {
+        const textFilter = document.getElementById('mobileSearch').value.toUpperCase();
+
+        let statusFilter = '';
+        if (document.getElementById('filterActive').checked) {
+            statusFilter = 'active';
+        } else if (document.getElementById('filterExpired').checked) {
+            statusFilter = 'expired';
+        }
+
         const table = document.getElementById('membersTable');
         const tr = table.getElementsByTagName('tr');
 
         for (let i = 1; i < tr.length; i++) {
-            const td = tr[i].getElementsByTagName('td')[1];
-            if (td) {
-                const txtValue = td.textContent || td.innerText;
-                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            const mobileTd = tr[i].getElementsByTagName('td')[1];
+            const statusTd = tr[i].querySelector('.status-cell');
+
+            if (mobileTd && statusTd) {
+                const mobileValue = mobileTd.textContent || mobileTd.innerText;
+                const statusValue = statusTd.getAttribute('data-status') || '';
+
+                const matchesText = mobileValue.toUpperCase().indexOf(textFilter) > -1;
+                const matchesStatus = (statusFilter === '') || (statusFilter === statusValue);
+
+                if (matchesText && matchesStatus) {
                     tr[i].style.display = "";
                 } else {
                     tr[i].style.display = "none";
                 }
             }
         }
+    }
+
+    function searchByMobile() {
+        applyMemberFilter();
+    }
+
+    function filterTransactions() {
+        const textFilter = document.getElementById('transactionSearch').value.toUpperCase();
+        const fromDateStr = document.getElementById('transactionFromDate').value;
+        const toDateStr = document.getElementById('transactionToDate').value;
+
+        let fromDate = null;
+        let toDate = null;
+
+        if (fromDateStr) fromDate = new Date(fromDateStr);
+        if (toDateStr) toDate = new Date(toDateStr);
+
+        const table = document.getElementById('transactionsTable');
+        const tr = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < tr.length; i++) {
+            const mobileTd = tr[i].querySelector('.txn-mobile-cell');
+            const dateTd = tr[i].querySelector('.txn-date-cell');
+
+            if (mobileTd && dateTd) {
+                const mobileValue = mobileTd.textContent || mobileTd.innerText;
+                const dateValueStr = dateTd.textContent || dateTd.innerText;
+
+                const matchesText = mobileValue.toUpperCase().indexOf(textFilter) > -1;
+                let matchesDate = true;
+
+                if (fromDate || toDate) {
+                    const txnDate = new Date(dateValueStr);
+                    if (!isNaN(txnDate.getTime())) {
+                        if (fromDate && txnDate < fromDate) {
+                            matchesDate = false;
+                        }
+                        if (toDate && txnDate > toDate) {
+                            matchesDate = false;
+                        }
+                    }
+                }
+
+                if (matchesText && matchesDate) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    function searchTransactionsByMobile() {
+        filterTransactions();
+    }
+
+    function clearTransactionFilters() {
+        document.getElementById('transactionSearch').value = '';
+        document.getElementById('transactionFromDate').value = '';
+        document.getElementById('transactionToDate').value = '';
+        filterTransactions();
     }
 
     function showLoading() {
@@ -587,12 +780,46 @@
             document.getElementById('viewFirstName').innerText = data.first_name || 'N/A';
             document.getElementById('viewLastName').innerText = data.last_name || 'N/A';
             document.getElementById('viewMobileNumber').innerText = data.mobile_number || 'N/A';
+            document.getElementById('viewEmail').innerText = data.email || 'N/A';
+            document.getElementById('viewGender').innerText = data.gender || 'N/A';
+            document.getElementById('viewAddress').innerText = data.address || 'N/A';
             document.getElementById('viewDob').innerText = data.dob || 'N/A';
             document.getElementById('viewJoiningDate').innerText = data.joining_date || 'N/A';
-            document.getElementById('viewHeight').innerText = data.height || 'N/A';
-            document.getElementById('viewWeight').innerText = data.weight || 'N/A';
-            document.getElementById('viewBmi').innerText = data.bmi || 'N/A';
             document.getElementById('viewSubscription').innerText = data.subscription || 'N/A';
+            document.getElementById('viewSubscriptionStart').innerText = data.subscription_start_date || 'N/A';
+            document.getElementById('viewSubscriptionEnd').innerText = data.subscription_end_date || 'N/A';
+
+            const badgeEl = document.getElementById('viewStatusBadge');
+            badgeEl.className = 'badge';
+            if (data.status === 'active') {
+                badgeEl.innerText = 'Active';
+                badgeEl.classList.add('bg-success');
+            } else {
+                badgeEl.innerText = data.status || 'Unknown';
+                badgeEl.classList.add('bg-secondary');
+            }
+
+            document.getElementById('vitalHeight').value = data.height || '';
+            document.getElementById('vitalWeight').value = data.weight || '';
+            document.getElementById('vitalBmi').value = data.bmi || '';
+
+            // Populate Renew Subscription form defaults
+            document.getElementById('renewSubscriptionPlan').value = data.subscription || '1 Month';
+
+            // Set default renew start date to today, or the end date if it's in the future
+            let defaultRenewDate = new Date().toISOString().split('T')[0];
+            if (data.subscription_end_date) {
+                const endDate = new Date(data.subscription_end_date);
+                if (endDate > new Date()) {
+                    defaultRenewDate = data.subscription_end_date;
+                }
+            }
+            document.getElementById('renewSubscriptionStartDate').value = defaultRenewDate;
+            calculateRenewEndDate();
+
+            // clear out the amount field for a fresh renewal
+            document.getElementById('renewAmount').value = '';
+            document.getElementById('renewPaymentMethod').value = 'Credit Card';
 
             // Handle Photo display
             const photoEl = document.getElementById('viewPhoto');
@@ -618,6 +845,97 @@
         }
     }
 
+    function calculateBMI() {
+        const height = parseFloat(document.getElementById('vitalHeight').value);
+        const weight = parseFloat(document.getElementById('vitalWeight').value);
+        if (height && weight && height > 0) {
+            // BMI = weight(kg) / (height(m) * height(m))
+            const heightInMeters = height / 100;
+            const bmi = weight / (heightInMeters * heightInMeters);
+            document.getElementById('vitalBmi').value = bmi.toFixed(2);
+        } else {
+            document.getElementById('vitalBmi').value = '';
+        }
+    }
+
+    async function updateVitals(event) {
+        event.preventDefault();
+        if (!currentMemberData) return;
+
+        const height = document.getElementById('vitalHeight').value;
+        const weight = document.getElementById('vitalWeight').value;
+        const bmi = document.getElementById('vitalBmi').value;
+        const mobileNumber = currentMemberData.mobile_number;
+
+        showLoading();
+        try {
+            const formData = new FormData();
+            formData.append('mobile_number', mobileNumber);
+            formData.append('height', height);
+            formData.append('weight', weight);
+            formData.append('bmi', bmi);
+
+            const response = await fetch('/update_vitals', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Vitals updated successfully!');
+                viewMember(mobileNumber); // Reload to get updated data
+            } else {
+                alert('Failed to update vitals.');
+            }
+        } catch (error) {
+            console.error('Error updating vitals:', error);
+            alert('An error occurred while updating vitals.');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function renewSubscription(event) {
+        event.preventDefault();
+        if (!currentMemberData) return;
+
+        const plan = document.getElementById('renewSubscriptionPlan').value;
+        const startDate = document.getElementById('renewSubscriptionStartDate').value;
+        const endDate = document.getElementById('renewSubscriptionEndDate').value;
+        const amount = document.getElementById('renewAmount').value;
+        const paymentMethod = document.getElementById('renewPaymentMethod').value;
+        const mobileNumber = currentMemberData.mobile_number;
+
+        showLoading();
+        try {
+            const formData = new FormData();
+            formData.append('mobile_number', mobileNumber);
+            formData.append('subscription', plan);
+            formData.append('subscription_start_date', startDate);
+            formData.append('subscription_end_date', endDate);
+            formData.append('amount', amount);
+            formData.append('payment_method', paymentMethod);
+
+            const response = await fetch('/renew_subscription', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Subscription renewed successfully! A new transaction has been recorded.');
+                viewMember(mobileNumber); // Reload to get updated data
+                // Also trigger a background reload of transactions just in case the user switches tabs
+                fetch('/fitmafia').then(() => {});
+            } else {
+                alert('Failed to renew subscription.');
+            }
+        } catch (error) {
+            console.error('Error renewing subscription:', error);
+            alert('An error occurred while renewing subscription.');
+        } finally {
+            hideLoading();
+        }
+    }
+
     function editMember() {
         if (!currentMemberData) return;
 
@@ -626,15 +944,11 @@
         document.getElementById('lastName').value = currentMemberData.last_name || '';
         document.getElementById('mobile_number').value = currentMemberData.mobile_number || '';
         document.getElementById('mobile_number').setAttribute('readonly', true); // Prevent PK change
+        document.getElementById('email').value = currentMemberData.email || '';
+        document.getElementById('gender').value = currentMemberData.gender || '';
+        document.getElementById('address').value = currentMemberData.address || '';
         document.getElementById('dob').value = currentMemberData.dob || '';
         document.getElementById('joining_date').value = currentMemberData.joining_date || '';
-        document.getElementById('height').value = currentMemberData.height || '';
-        document.getElementById('weight').value = currentMemberData.weight || '';
-        document.getElementById('bmi').value = currentMemberData.bmi || '';
-
-        if (currentMemberData.subscription) {
-            document.getElementById('subscription').value = currentMemberData.subscription;
-        }
 
         // Change Title & Buttons
         document.getElementById('registerFormTitle').innerText = "Edit Member Details";
@@ -658,11 +972,36 @@
         document.getElementById('cancelEditBtn').classList.add('d-none');
         currentMemberData = null;
 
+        // Reset joining date to today when canceling
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('joining_date').value = today;
+
         // If called explicitly via Cancel button, go back to Member list or Dashboard
         if(event && event.target.id === 'cancelEditBtn') {
            showSection('members');
         }
     }
+
+    function viewMemberTransactions() {
+        if (!currentMemberData) return;
+        showSection('transactions');
+
+        document.getElementById('transactionSearch').value = currentMemberData.mobile_number;
+        document.getElementById('transactionFromDate').value = '';
+        document.getElementById('transactionToDate').value = '';
+
+        filterTransactions();
+    }
+
+    // Set today's date when the page loads if we start on the register page
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentActive = document.querySelector('.section.active');
+        if (currentActive && currentActive.id === 'register') {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('joining_date').value = today;
+        }
+    });
+
 </script>
 </body>
 </html>
