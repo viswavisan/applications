@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, text
+from sqlalchemy import create_engine, Column, String, text, Boolean
 from sqlalchemy.orm import scoped_session, declarative_base, sessionmaker
 import os
 
@@ -57,6 +57,7 @@ class Transaction(Base):
     mobile_number = Column(String, nullable=True)
     date = Column(String, nullable=True)
     amount = Column(String, nullable=True)
+    discount = Column(String, nullable=True)
     payment_method = Column(String, nullable=True)
     status = Column(String, nullable=True)
 

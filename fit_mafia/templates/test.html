@@ -127,6 +127,54 @@
             transform: scale(1.02);
             opacity: 0.9;
         }
+
+        /* Camera overlay styles */
+        #cameraOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        #cameraVideo {
+            max-width: 100%;
+            max-height: 70vh;
+            background: #000;
+            border: 2px solid #fff;
+            border-radius: 8px;
+        }
+        .camera-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        #photoPreview {
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            border: 1px solid #ccc;
+        }
+
+        /* Signature Canvas */
+        #signatureCanvas {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: crosshair;
+            touch-action: none;
+            width: 100%;
+            max-width: 600px;
+            height: 200px;
+        }
     </style>
 </head>
 <body>
@@ -135,6 +183,21 @@
 <div id="loadingOverlay" class="d-none">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- Camera Overlay -->
+<div id="cameraOverlay" class="d-none">
+    <h3 class="text-white mb-3">Capture Photo</h3>
+    <video id="cameraVideo" autoplay playsinline></video>
+    <canvas id="cameraCanvas" class="d-none"></canvas>
+    <div class="camera-controls">
+        <button type="button" class="btn btn-light" id="captureBtn">
+            <i class="bi bi-camera"></i> Capture
+        </button>
+        <button type="button" class="btn btn-danger" id="closeCameraBtn">
+            <i class="bi bi-x-lg"></i> Cancel
+        </button>
     </div>
 </div>
 
@@ -232,7 +295,7 @@
                 <h2 id="registerFormTitle">New Member Registration</h2>
                 <div class="card mt-4 shadow-sm">
                     <div class="card-body">
-                        <form id="memberForm" action="/register_member" method="POST" enctype="multipart/form-data">
+                        <form id="memberForm" action="/register_member" method="POST" enctype="multipart/form-data" onsubmit="prepareSignature()">
                             <div class="row mb-3">
                                 <div class="col-12 col-md-6 mb-3 mb-md-0">
                                     <label for="firstName" class="form-label">First Name</label>
@@ -280,10 +343,47 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="photo" class="form-label">Photo</label>
-                                <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
+                                <label class="form-label">Photo</label>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
+                                    <span class="text-muted">OR</span>
+                                    <button type="button" class="btn btn-outline-secondary text-nowrap" id="openCameraBtn">
+                                        <i class="bi bi-camera"></i> Capture
+                                    </button>
+                                </div>
+                                <!-- Hidden input to store captured base64 image data -->
+                                <input type="hidden" id="capturedPhotoData" name="captured_photo">
+                                <!-- Preview of captured or selected image -->
+                                <img id="photoPreview" src="" alt="Photo Preview">
                             </div>
-                            <div class="d-flex flex-wrap gap-2">
+
+                            <hr>
+                            <div class="mb-3" id="termsContainer">
+                                <h5>Terms & Conditions</h5>
+                                <div class="border p-3 mb-2 rounded bg-light" style="max-height: 150px; overflow-y: auto; font-size: 0.9em;">
+                                    <p>1. Members must adhere to gym rules and timings.</p>
+                                    <p>2. Subscriptions are non-refundable and non-transferable.</p>
+                                    <p>3. The gym is not responsible for lost or stolen personal items.</p>
+                                    <p>4. Members should consult a physician before starting any rigorous workout program.</p>
+                                    <p>5. Management reserves the right to terminate membership for misconduct.</p>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="termsAccepted" name="terms_accepted" required>
+                                    <label class="form-check-label fw-bold" for="termsAccepted">
+                                        I accept the Terms and Conditions
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3" id="signatureContainer">
+                                <label class="form-label fw-bold">Member Signature *</label>
+                                <div>
+                                    <canvas id="signatureCanvas"></canvas>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="clearSignature()">Clear Signature</button>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2 mt-4">
                                 <button type="submit" id="submitBtn" class="btn btn-primary w-100 w-sm-auto">Register Member</button>
                                 <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none w-100 w-sm-auto" onclick="resetForm()">Cancel Edit</button>
                             </div>
@@ -476,11 +576,15 @@
                                         </div>
                                     </div>
                                     <div class="row mb-3">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <label for="renewAmount" class="form-label">Amount</label>
                                             <input type="text" class="form-control" id="renewAmount" name="amount" placeholder="e.g. 50" required>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
+                                            <label for="renewDiscount" class="form-label">Discount</label>
+                                            <input type="text" class="form-control" id="renewDiscount" name="discount" placeholder="e.g. 10 or 10%">
+                                        </div>
+                                        <div class="col-md-4">
                                             <label for="renewPaymentMethod" class="form-label">Payment Method</label>
                                             <select class="form-select" id="renewPaymentMethod" name="payment_method" required>
                                                 <option value="Credit Card">Credit Card</option>
@@ -534,6 +638,7 @@
                                         <th>Member Name</th>
                                         <th>Mobile Number</th>
                                         <th>Amount</th>
+                                        <th>Discount</th>
                                         <th>Payment Method</th>
                                         <th>Status</th>
                                         <th>Action</th>
@@ -547,6 +652,7 @@
                                         <td>{{ txn.member_name }}</td>
                                         <td class="txn-mobile-cell">{{ txn.mobile_number }}</td>
                                         <td>{{ txn.amount }}</td>
+                                        <td>{{ txn.discount | default('N/A') }}</td>
                                         <td>{{ txn.payment_method }}</td>
                                         <td>
                                             {% if txn.status == 'Completed' %}
@@ -563,7 +669,7 @@
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="8" class="text-center">No transactions found.</td>
+                                        <td colspan="9" class="text-center">No transactions found.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -582,6 +688,167 @@
 <script>
     // Global variable to store current member data for editing
     let currentMemberData = null;
+
+    // --- Signature Pad Logic ---
+    const sigCanvas = document.getElementById('signatureCanvas');
+    const sigCtx = sigCanvas.getContext('2d');
+    let isDrawing = false;
+    let signatureEmpty = true;
+
+    // Setup Canvas for High DPI screens and set fixed size bounds
+    function resizeCanvas() {
+        const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+        const rect = sigCanvas.parentElement.getBoundingClientRect();
+
+        // Make canvas take up to 600px width, but respond to smaller screens
+        const width = Math.min(600, rect.width);
+        const height = 200;
+
+        sigCanvas.width = width * ratio;
+        sigCanvas.height = height * ratio;
+        sigCtx.scale(ratio, ratio);
+
+        // This clears the canvas on resize. If we wanted to keep the signature, we'd need to save/restore the image data.
+        clearSignature();
+    }
+    window.addEventListener("resize", resizeCanvas);
+    // Initial call will happen when the form is displayed
+
+    function startDrawing(e) {
+        isDrawing = true;
+        signatureEmpty = false;
+        draw(e);
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+        sigCtx.beginPath();
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+
+        // Handle both mouse and touch events
+        let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+        if(!clientX || !clientY) return;
+
+        const rect = sigCanvas.getBoundingClientRect();
+        const scaleX = sigCanvas.width / rect.width;
+        const scaleY = sigCanvas.height / rect.height;
+
+        const x = (clientX - rect.left);
+        const y = (clientY - rect.top);
+
+        sigCtx.lineWidth = 2;
+        sigCtx.lineCap = 'round';
+        sigCtx.strokeStyle = '#000';
+
+        sigCtx.lineTo(x, y);
+        sigCtx.stroke();
+        sigCtx.beginPath();
+        sigCtx.moveTo(x, y);
+        e.preventDefault(); // prevent scrolling while drawing
+    }
+
+    sigCanvas.addEventListener('mousedown', startDrawing);
+    sigCanvas.addEventListener('mousemove', draw);
+    sigCanvas.addEventListener('mouseup', stopDrawing);
+    sigCanvas.addEventListener('mouseout', stopDrawing);
+
+    sigCanvas.addEventListener('touchstart', startDrawing, {passive: false});
+    sigCanvas.addEventListener('touchmove', draw, {passive: false});
+    sigCanvas.addEventListener('touchend', stopDrawing);
+
+    function clearSignature() {
+        // Use transform matrix to clear everything correctly
+        sigCtx.save();
+        sigCtx.setTransform(1, 0, 0, 1, 0, 0);
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        sigCtx.restore();
+        signatureEmpty = true;
+    }
+
+    function prepareSignature() {
+        // We no longer require saving signature data, so this does nothing to the form
+        return true;
+    }
+    // --- End Signature Pad Logic ---
+
+    // --- Camera capture logic ---
+    let cameraStream = null;
+
+    document.getElementById('openCameraBtn').addEventListener('click', async () => {
+        const overlay = document.getElementById('cameraOverlay');
+        const video = document.getElementById('cameraVideo');
+
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            video.srcObject = cameraStream;
+            overlay.classList.remove('d-none');
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            alert("Could not access camera. Please ensure permissions are granted.");
+        }
+    });
+
+    document.getElementById('closeCameraBtn').addEventListener('click', () => {
+        closeCamera();
+    });
+
+    document.getElementById('captureBtn').addEventListener('click', () => {
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.getElementById('cameraCanvas');
+
+        // Match canvas dimensions to video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw video frame to canvas
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Get image data as base64
+        const imageData = canvas.toDataURL('image/jpeg');
+
+        // Store in hidden input and show preview
+        document.getElementById('capturedPhotoData').value = imageData;
+        const preview = document.getElementById('photoPreview');
+        preview.src = imageData;
+        preview.style.display = 'block';
+
+        // Clear file input if a photo is captured
+        document.getElementById('photo').value = '';
+
+        closeCamera();
+    });
+
+    // Also preview if a file is chosen via the normal file input
+    document.getElementById('photo').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const preview = document.getElementById('photoPreview');
+                preview.src = evt.target.result;
+                preview.style.display = 'block';
+                // Clear captured data if a file is selected
+                document.getElementById('capturedPhotoData').value = '';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    function closeCamera() {
+        const overlay = document.getElementById('cameraOverlay');
+        overlay.classList.add('d-none');
+
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+    }
+    // --- End camera logic ---
 
     function closeOffcanvas() {
         const offcanvasEl = document.getElementById('mobileSidebar');
@@ -648,6 +915,8 @@
         if (sectionId === 'register' && !document.getElementById('mobile_number').hasAttribute('readonly')) {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('joining_date').value = today;
+            // Resize canvas when showing the section so it draws correctly
+            setTimeout(resizeCanvas, 100);
         }
     }
 
@@ -824,6 +1093,7 @@
 
             // clear out the amount field for a fresh renewal
             document.getElementById('renewAmount').value = '';
+            document.getElementById('renewDiscount').value = '';
             document.getElementById('renewPaymentMethod').value = 'Credit Card';
 
             // Handle Photo display
@@ -907,6 +1177,7 @@
         const startDate = document.getElementById('renewSubscriptionStartDate').value;
         const endDate = document.getElementById('renewSubscriptionEndDate').value;
         const amount = document.getElementById('renewAmount').value;
+        const discount = document.getElementById('renewDiscount').value;
         const paymentMethod = document.getElementById('renewPaymentMethod').value;
         const mobileNumber = currentMemberData.mobile_number;
 
@@ -918,6 +1189,7 @@
             formData.append('subscription_start_date', startDate);
             formData.append('subscription_end_date', endDate);
             formData.append('amount', amount);
+            formData.append('discount', discount);
             formData.append('payment_method', paymentMethod);
 
             const response = await fetch('/renew_subscription', {
@@ -955,6 +1227,21 @@
         document.getElementById('dob').value = currentMemberData.dob || '';
         document.getElementById('joining_date').value = currentMemberData.joining_date || '';
 
+        // If editing, hide the terms block since they've already accepted
+        document.getElementById('termsContainer').style.display = 'none';
+        document.getElementById('termsAccepted').removeAttribute('required');
+        document.getElementById('signatureContainer').style.display = 'none';
+
+        // Handle Photo Preview when editing
+        const preview = document.getElementById('photoPreview');
+        if (currentMemberData.photo) {
+            preview.src = currentMemberData.photo;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+        document.getElementById('capturedPhotoData').value = '';
+
         // Change Title & Buttons
         document.getElementById('registerFormTitle').innerText = "Edit Member Details";
         document.getElementById('submitBtn').innerText = "Update Member";
@@ -970,6 +1257,16 @@
 
         // Remove readonly from mobile number
         document.getElementById('mobile_number').removeAttribute('readonly');
+
+        // Show terms block for new registrations
+        document.getElementById('termsContainer').style.display = 'block';
+        document.getElementById('termsAccepted').setAttribute('required', 'true');
+        document.getElementById('signatureContainer').style.display = 'block';
+        clearSignature();
+
+        // Hide preview and clear hidden input
+        document.getElementById('photoPreview').style.display = 'none';
+        document.getElementById('capturedPhotoData').value = '';
 
         // Reset UI labels and buttons
         document.getElementById('registerFormTitle').innerText = "New Member Registration";

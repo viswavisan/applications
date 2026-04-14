@@ -146,6 +146,7 @@ def register_member():
     email = request.form.get('email')
     address = request.form.get('address')
     joining_date = request.form.get('joining_date')
+    captured_photo = request.form.get('captured_photo')
     
     if not joining_date:
         joining_date = datetime.date.today().isoformat()
@@ -154,13 +155,12 @@ def register_member():
     # since we removed subscription fields from registration
     
     photo = None
-    if 'photo' in request.files:
+    if 'photo' in request.files and request.files['photo'].filename != '':
         photo_file = request.files['photo']
-        if photo_file.filename != '':
-            # To simplify for the example, we read the photo as base64 and store the string.
-            # In a real app, you'd save it to a cloud bucket or local filesystem and save the path.
-            photo_bytes = photo_file.read()
-            photo = "data:" + photo_file.content_type + ";base64," + base64.b64encode(photo_bytes).decode('utf-8')
+        photo_bytes = photo_file.read()
+        photo = "data:" + photo_file.content_type + ";base64," + base64.b64encode(photo_bytes).decode('utf-8')
+    elif captured_photo:
+        photo = captured_photo
 
     if mobile_number:
         try:
@@ -231,6 +231,7 @@ def renew_subscription():
     subscription_start_date = request.form.get('subscription_start_date')
     subscription_end_date = request.form.get('subscription_end_date')
     amount = request.form.get('amount')
+    discount = request.form.get('discount')
     payment_method = request.form.get('payment_method')
 
     if mobile_number and subscription and subscription_start_date:
@@ -270,6 +271,7 @@ def renew_subscription():
                         mobile_number=member.mobile_number,
                         date=today.isoformat(),
                         amount=amount,
+                        discount=discount,
                         payment_method=payment_method,
                         status="Completed"
                     )
@@ -342,6 +344,20 @@ def get_member(mobile_number):
     except Exception as e:
         print(e)
         return jsonify({"error": "An error occurred"}), 500
+
+@app.route('/print_receipt/<transaction_id>', methods=['GET'])
+def print_receipt(transaction_id):
+    try:
+        txn = db.session.query(Transaction).filter_by(transaction_id=transaction_id).first()
+        if not txn:
+            return "Transaction not found", 404
+            
+        member = db.session.query(Member).filter_by(mobile_number=txn.mobile_number).first()
+        
+        return render_template('receipt.html', txn=txn, member=member)
+    except Exception as e:
+        print(e)
+        return "An error occurred", 500
 
 @app.route('/logout', methods=['GET'])
 def logout():
