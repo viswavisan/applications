@@ -535,6 +535,7 @@
                                         <th>Amount</th>
                                         <th>Payment Method</th>
                                         <th>Status</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -555,10 +556,13 @@
                                                 <span class="badge bg-secondary">{{ txn.status | default('Unknown') }}</span>
                                             {% endif %}
                                         </td>
+                                        <td>
+                                            <a href="/print_receipt/{{ txn.transaction_id }}" class="btn btn-sm btn-outline-primary" target="_blank">Print</a>
+                                        </td>
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="7" class="text-center">No transactions found.</td>
+                                        <td colspan="8" class="text-center">No transactions found.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

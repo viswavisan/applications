@@ -14,7 +14,7 @@ AUTH_REALM = 'Basic realm="Login Required"'
 
 def handle_session_timeout(now):
     last_active = datetime.datetime.fromisoformat(session['last_active'])
-    if now - last_active > datetime.timedelta(minutes=30):
+    if now - last_active > datetime.timedelta(minutes=2):
         session_id = session.get('session_id')
         try:
             record = db.session.query(Session).filter_by(session_id=session_id).first()
