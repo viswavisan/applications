@@ -43,12 +43,13 @@
         }
         .content {
             padding: 20px;
-            margin-left: 16.66667%; /* Offset for col-md-2 sidebar */
+            margin-left: 16.666667%; /* Offset for col-md-2 sidebar */
         }
         /* Adjust for smaller screens where sidebar is hidden */
         @media (max-width: 767.98px) {
             .content {
                 margin-left: 0;
+                width: 100%;
             }
         }
         .section {
@@ -161,7 +162,7 @@
 <div class="container-fluid p-0">
     <div class="row g-0">
         <!-- Sidebar (Hidden on mobile) -->
-        <nav class="col-md-3 col-lg-2 sidebar d-none d-md-flex flex-column">
+        <nav class="col-md-2 sidebar d-none d-md-flex flex-column">
             <div>
                 <div class="text-center mb-4">
                     <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Logo" style="max-width: 80%; border-radius: 8px;">
@@ -177,7 +178,7 @@
         </nav>
 
         <!-- Main Content -->
-        <main class="col-12 col-md-9 col-lg-10 content">
+        <main class="col-12 col-md-10 content">
             
             <!-- Top Navigation Bar with UserName -->
             <div class="top-navbar">
