@@ -54,3 +54,8 @@ main_app.register_blueprint(fit_mafia_blueprint)
 
 if __name__ == "__main__":
     main_app.run(host='0.0.0.0', port=5000)
+    #workslocal http 5000 --name visan
+    # sudo
+    # firewall - cmd - -permanent - -add - service = http
+    # sudo
+    # firewall - cmd - -reload
