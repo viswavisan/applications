@@ -3,18 +3,20 @@ from dateutil.relativedelta import relativedelta
 import os
 import uuid
 import base64
-from flask import render_template, Blueprint, request, Response, session, redirect, url_for, jsonify
+from flask import render_template, Blueprint, request, session, redirect, url_for, jsonify
 from fit_mafia.models import db, Session, Member, Transaction
 from sqlalchemy.orm import class_mapper
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
 app = Blueprint('fit_mafia', __name__, template_folder=template_dir)
 
-AUTH_REALM = 'Basic realm="Login Required"'
+# Instead of using HTTP Basic Auth globally, we'll handle login via a form and session.
 
 def handle_session_timeout(now):
+    if 'last_active' not in session:
+        return False
     last_active = datetime.datetime.fromisoformat(session['last_active'])
-    if now - last_active > datetime.timedelta(minutes=2):
+    if now - last_active > datetime.timedelta(minutes=30): # increased to 30 mins
         session_id = session.get('session_id')
         try:
             record = db.session.query(Session).filter_by(session_id=session_id).first()
@@ -32,23 +34,25 @@ def handle_session_timeout(now):
 
 @app.before_request
 def require_auth():
-    """Check authentication before every request in this Blueprint."""
-    if request.endpoint == 'fit_mafia.logout':
+    """Check authentication before every request in this Blueprint except public endpoints."""
+    public_endpoints = ['fit_mafia.public_page', 'fit_mafia.login']
+    
+    # Allow static files if any
+    if request.endpoint and request.endpoint.startswith('static'):
         return None
 
-    auth = request.authorization
-    if not auth or auth.password != "prashanth" or auth.username != "prashanth":
-        return Response(
-            'Could not verify your access level for that URL.\n'
-            'You have to login with proper credentials', 401,
-            {'WWW-Authenticate': AUTH_REALM})
+    if request.endpoint in public_endpoints:
+        return None
+
+    # Check if user is logged in
+    if 'logged_in' not in session or not session['logged_in']:
+        return redirect(url_for('fit_mafia.public_page'))
             
     now = datetime.datetime.now()
 
-    if 'session_id' in session and 'last_active' in session:
-        if handle_session_timeout(now):
-            return Response('Session expired due to inactivity. Please login again.', 401,
-                            {'WWW-Authenticate': AUTH_REALM})
+    if handle_session_timeout(now):
+        # Redirect to public page with an optional message or just basic redirect
+        return redirect(url_for('fit_mafia.public_page'))
 
     session.permanent = True
     if 'session_id' not in session:
@@ -56,7 +60,7 @@ def require_auth():
             new_session_id = str(uuid.uuid4())
             new_record = Session(session_id=new_session_id,
                                  start_time=str(now),
-                                 user_name=str(auth.username))
+                                 user_name=session.get('username', 'Admin'))
             db.session.add(new_record)
             db.session.commit()
             session['session_id'] = new_session_id
@@ -64,8 +68,6 @@ def require_auth():
         except Exception as e:
             db.session.rollback()
             print(e)
-    else:
-        print(f"Continuing session: {session['session_id']}")
         
     session['last_active'] = now.isoformat()
     return None
@@ -92,6 +94,42 @@ def update_member_statuses(members):
             db.session.rollback()
             print(f"Error updating member statuses: {e}")
 
+@app.route('/', methods=['GET'])
+def public_page():
+    # If already logged in, redirect to dashboard
+    if session.get('logged_in'):
+        return redirect(url_for('fit_mafia.fitmafia'))
+    return render_template('index.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    
+    # Hardcoded credentials as before
+    if username == "prashanth" and password == "prashanth":
+        session['logged_in'] = True
+        session['username'] = username
+        session['last_active'] = datetime.datetime.now().isoformat()
+        
+        # Create DB session record
+        try:
+            new_session_id = str(uuid.uuid4())
+            new_record = Session(session_id=new_session_id,
+                                 start_time=str(datetime.datetime.now()),
+                                 user_name=username)
+            db.session.add(new_record)
+            db.session.commit()
+            session['session_id'] = new_session_id
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error recording login session: {e}")
+            
+        return redirect(url_for('fit_mafia.fitmafia'))
+    else:
+        # Invalid credentials
+        return render_template('index.html', error="Invalid username or password")
+
 @app.route('/fitmafia', methods=['GET'])
 def fitmafia():
     total_members = 0
@@ -114,8 +152,7 @@ def fitmafia():
         members = []
         print(f"Error fetching data: {e}")
 
-    # Pass current_user dict (we use auth username from request.authorization)
-    current_user = {"username": request.authorization.username if request.authorization else "Admin"}
+    current_user = {"username": session.get('username', 'Admin')}
     
     return render_template('test.html', 
                            members=members, 
@@ -151,9 +188,6 @@ def register_member():
     if not joining_date:
         joining_date = datetime.date.today().isoformat()
 
-    # Determine status if it's a new registration vs update, but don't strictly require plan here yet 
-    # since we removed subscription fields from registration
-    
     photo = None
     if 'photo' in request.files and request.files['photo'].filename != '':
         photo_file = request.files['photo']
@@ -164,7 +198,6 @@ def register_member():
 
     if mobile_number:
         try:
-            # Check if member exists to retain old photo if new one isn't uploaded during edit
             existing_member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
             if existing_member and not photo:
                 photo = existing_member.photo
@@ -179,11 +212,8 @@ def register_member():
                 address=address,
                 joining_date=joining_date,
                 photo=photo,
-                status='active' # Set as active by default
+                status='active'
             )
-            # If the columns height, weight, bmi still exist in the database, 
-            # they will just receive None as we don't pass them in the constructor,
-            # which is fine since they have nullable=True.
             if existing_member:
                 new_member.height = existing_member.height
                 new_member.weight = existing_member.weight
@@ -245,7 +275,6 @@ def renew_subscription():
                 member.subscription_start_date = subscription_start_date
                 member.subscription_end_date = subscription_end_date
                 
-                # Check status based on new end date
                 today = datetime.date.today()
                 try:
                     end_date = datetime.date.fromisoformat(subscription_end_date)
@@ -254,11 +283,10 @@ def renew_subscription():
                     else:
                         member.status = 'active'
                 except Exception:
-                    member.status = 'active' # fallback
+                    member.status = 'active'
 
                 db.session.commit()
                 
-                # Register a transaction for this renewal if amount and payment method are provided
                 if amount and payment_method:
                     transaction_id = f"TXN{str(uuid.uuid4())[:8].upper()}"
                     member_name = f"{member.first_name or ''} {member.last_name or ''}".strip()
@@ -322,7 +350,6 @@ def get_member(mobile_number):
     try:
         member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
         if member:
-            # check and update status just in case it's fetched directly without hitting /fitmafia first
             today = datetime.date.today()
             if member.subscription_end_date:
                 try:
@@ -336,7 +363,6 @@ def get_member(mobile_number):
                 except Exception:
                     pass
 
-            # Serialize the SQLAlchemy model to a dict
             columns = [c.key for c in class_mapper(member.__class__).columns]
             member_dict = {c: getattr(member, c) for c in columns}
             return jsonify(member_dict)
@@ -373,6 +399,4 @@ def logout():
             print(f"Error updating session end_time: {e}")
             
     session.clear()
-    return Response(
-        'Logged out successfully.', 401,
-        {'WWW-Authenticate': AUTH_REALM})
+    return redirect(url_for('fit_mafia.public_page'))

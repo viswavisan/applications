@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fit Mafia Gym - Unleash Your Potential</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/69/69840.png">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --primary-color: #e50914; /* Example red accent */
+            --dark-bg: #141414;
+            --text-light: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            scroll-behavior: smooth;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .navbar-brand img {
+            height: 40px;
+            border-radius: 4px;
+        }
+        .nav-link {
+            color: var(--text-light) !important;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+        .btn-login {
+            background-color: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--text-light);
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Login Form embedded in nav/dropdown or inline */
+        .login-form-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .login-input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 0.9rem;
+        }
+        .login-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .login-input:focus {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-color);
+            outline: none;
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 80px; /* Offset for navbar */
+        }
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .hero h1 span {
+            color: var(--primary-color);
+        }
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #ddd;
+        }
+        .btn-hero {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+        .btn-hero:hover {
+            background-color: #b20710;
+        }
+
+        /* Section Titles */
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 50px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background-color: var(--primary-color);
+        }
+
+        /* About Section */
+        .about-section {
+            padding: 100px 0;
+            background-color: #1a1a1a;
+        }
+        .about-img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Membership Details */
+        .membership-section {
+            padding: 100px 0;
+            background-color: var(--dark-bg);
+        }
+        .pricing-card {
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(229, 9, 20, 0.2);
+            border-color: var(--primary-color);
+        }
+        .pricing-card h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        .price span {
+            font-size: 1.2rem;
+            color: #888;
+        }
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+        }
+        .pricing-features li {
+            margin-bottom: 10px;
+            color: #ddd;
+        }
+
+        /* Offers Section */
+        .offers-section {
+            padding: 80px 0;
+            background: linear-gradient(45deg, var(--primary-color), #8a060c);
+            text-align: center;
+        }
+        .offer-box {
+            background: rgba(0,0,0,0.2);
+            padding: 40px;
+            border-radius: 10px;
+            border: 2px dashed rgba(255,255,255,0.5);
+        }
+        .offer-box h3 {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        /* Recent Activities / Gallery */
+        .gallery-section {
+            padding: 100px 0;
+            background-color: #1a1a1a;
+        }
+        .gallery-item {
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Contact Section */
+        .contact-section {
+            padding: 100px 0;
+            background-color: var(--dark-bg);
+        }
+        .contact-info i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        .contact-card {
+            background: #222;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            height: 100%;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #111;
+            padding: 30px 0;
+            text-align: center;
+            border-top: 1px solid #333;
+        }
+
+        /* Utility */
+        .text-accent {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-xl navbar-dark fixed-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Fit Mafia Logo" class="me-2">
+                <span class="fw-bold fs-4">FIT MAFIA</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto align-items-center ms-4">
+                    <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#memberships">Memberships</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#gallery">Activities</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                </ul>
+
+                <!-- Inline Login Form -->
+                <form class="d-flex align-items-center mt-3 mt-xl-0 flex-column flex-xl-row gap-2" action="/login" method="POST">
+                    {% if error %}
+                        <small class="text-danger fw-bold me-2">{{ error }}</small>
+                    {% endif %}
+                    <input type="text" class="login-input" name="username" placeholder="Username" required>
+                    <input type="password" class="login-input" name="password" placeholder="Password" required>
+                    <button class="btn btn-login btn-sm px-4 py-2" type="submit">Login</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h1>Welcome to <span>Fit Mafia</span></h1>
+            <p>Join the elite. Train hard. Achieve your goals. Welcome to the family.</p>
+            <a href="#memberships" class="btn btn-hero">Join Now</a>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="container">
+            <h2 class="section-title">About Our Gym</h2>
+            <div class="row align-items-center mt-5">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1470&auto=format&fit=crop" alt="Gym Interior" class="about-img">
+                </div>
+                <div class="col-lg-6 px-lg-5">
+                    <h3 class="fw-bold mb-4">More Than Just a Gym, It's a <span class="text-accent">Lifestyle</span></h3>
+                    <p class="text-muted" style="line-height: 1.8;">
+                        Fit Mafia is the premier fitness destination designed for those who are serious about their goals. We provide state-of-the-art equipment, expert trainers, and a community atmosphere that pushes you to be your best self.
+                    </p>
+                    <p class="text-muted" style="line-height: 1.8;">
+                        Whether you are a beginner taking your first steps or a seasoned athlete looking to break plateaus, we have the tools, the space, and the vibe you need to succeed.
+                    </p>
+                    <div class="row mt-4">
+                        <div class="col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-accent fs-4 me-3"></i>
+                                <span>Modern Equipment</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-accent fs-4 me-3"></i>
+                                <span>Expert Trainers</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-accent fs-4 me-3"></i>
+                                <span>Group Classes</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-accent fs-4 me-3"></i>
+                                <span>Nutritional Guidance</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Special Offers -->
+    <section class="offers-section">
+        <div class="container">
+            <div class="offer-box">
+                <h3 class="mb-3">🔥 Limited Time Offer! 🔥</h3>
+                <p class="fs-4 mb-4">Get <strong>20% OFF</strong> on all Annual Memberships</p>
+                <a href="#contact" class="btn btn-dark btn-lg px-5 fw-bold text-uppercase">Claim Offer Now</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Memberships Section -->
+    <section id="memberships" class="membership-section">
+        <div class="container">
+            <h2 class="section-title">Membership Plans</h2>
+            <p class="text-center text-muted mb-5">Choose a plan that fits your goals and budget.</p>
+
+            <div class="row g-4 justify-content-center">
+                <!-- Plan 1 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card">
+                        <h3>1 Month</h3>
+                        <div class="price">₹1,500 <span>/mo</span></div>
+                        <ul class="pricing-features">
+                            <li>Full Gym Access</li>
+                            <li>Free Fitness Assessment</li>
+                            <li>Locker Room Access</li>
+                            <li>Standard Support</li>
+                        </ul>
+                        <a href="#contact" class="btn btn-outline-light w-100">Inquire Now</a>
+                    </div>
+                </div>
+
+                <!-- Plan 2 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card" style="border-color: var(--primary-color); transform: scale(1.05); z-index: 1;">
+                        <div class="badge bg-danger mb-3 position-absolute top-0 start-50 translate-middle">MOST POPULAR</div>
+                        <h3>6 Months</h3>
+                        <div class="price">₹7,000 <span>/6mo</span></div>
+                        <ul class="pricing-features">
+                            <li>Full Gym Access</li>
+                            <li>2 Personal Training Sessions</li>
+                            <li>Diet Plan Consultation</li>
+                            <li>Locker Room Access</li>
+                        </ul>
+                        <a href="#contact" class="btn btn-hero w-100">Inquire Now</a>
+                    </div>
+                </div>
+
+                <!-- Plan 3 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card">
+                        <h3>12 Months</h3>
+                        <div class="price">₹12,000 <span>/yr</span></div>
+                        <ul class="pricing-features">
+                            <li>Full Gym Access</li>
+                            <li>5 Personal Training Sessions</li>
+                            <li>Monthly Diet Plan Updates</li>
+                            <li>Free Gym Merchandise</li>
+                            <li>Priority Support</li>
+                        </ul>
+                        <a href="#contact" class="btn btn-outline-light w-100">Inquire Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Activities / Gallery -->
+    <section id="gallery" class="gallery-section">
+        <div class="container">
+            <h2 class="section-title">Recent Activities</h2>
+            <div class="row g-3 mt-4">
+                <div class="col-md-4 col-sm-6">
+                    <div class="gallery-item">
+                        <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1470&auto=format&fit=crop" alt="Activity 1">
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="gallery-item">
+                        <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1470&auto=format&fit=crop" alt="Activity 2">
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="gallery-item">
+                        <img src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1469&auto=format&fit=crop" alt="Activity 3">
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="gallery-item">
+                        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1470&auto=format&fit=crop" alt="Activity 4">
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="gallery-item">
+                        <img src="https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=1469&auto=format&fit=crop" alt="Activity 5">
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="gallery-item">
+                        <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop" alt="Activity 6">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <h2 class="section-title">Get in Touch</h2>
+            <div class="row g-4 mt-4">
+                <div class="col-md-4">
+                    <div class="contact-card">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <h4>Location</h4>
+                        <p class="text-muted mb-0">123 Fitness Street, Muscle City, State, 123456</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="contact-card">
+                        <i class="bi bi-telephone-fill"></i>
+                        <h4>Contact</h4>
+                        <p class="text-muted mb-0">Mobile: +91 98765 43210<br>Phone: +91 12345 67890</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="contact-card">
+                        <i class="bi bi-clock-fill"></i>
+                        <h4>Timing</h4>
+                        <p class="text-muted mb-0">Mon - Sat: 5:00 AM - 10:00 PM<br>Sunday: 6:00 AM - 12:00 PM</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-lg-8 mx-auto text-center">
+                    <p class="fs-5 text-muted">Ready to start your journey? Visit our gym today or login to manage your membership via the navigation bar above!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Fit Mafia Logo" style="height: 40px; margin-bottom: 20px; border-radius: 4px;">
+            <p class="mb-0 text-muted">&copy; 2023 Fit Mafia Gym. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simple script to make navbar solid on scroll
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                document.querySelector('.navbar').style.backgroundColor = 'rgba(20, 20, 20, 1)';
+            } else {
+                document.querySelector('.navbar').style.backgroundColor = 'rgba(20, 20, 20, 0.95)';
+            }
+        });
+    </script>
+</body>
+</html>
