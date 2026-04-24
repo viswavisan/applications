@@ -1,5 +1,5 @@
 flask==3.0.3
-sqlalchemy==2.0.28
+sqlalchemy
 flask-smorest==0.42.3
 marshmallow==3.21.1
 pytest==8.1.1
