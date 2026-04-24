@@ -118,6 +118,7 @@
         }
         .btn-hero:hover {
             background-color: #b20710;
+            color: white;
         }
 
         /* Section Titles */
@@ -165,6 +166,8 @@
             text-align: center;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             height: 100%;
+            display: flex;
+            flex-direction: column;
         }
         .pricing-card:hover {
             transform: translateY(-10px);
@@ -190,10 +193,43 @@
             list-style: none;
             padding: 0;
             margin-bottom: 30px;
+            flex-grow: 1;
         }
         .pricing-features li {
             margin-bottom: 10px;
             color: #ddd;
+        }
+
+        /* WhatsApp Button */
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+        .btn-whatsapp:hover {
+            background-color: #1ebe57;
+            color: white;
+        }
+        .btn-outline-whatsapp {
+            background-color: transparent;
+            color: #25D366;
+            border: 2px solid #25D366;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .btn-outline-whatsapp:hover {
+            background-color: #25D366;
+            color: white;
         }
 
         /* Offers Section */
@@ -291,8 +327,8 @@
                     {% if error %}
                         <small class="text-danger fw-bold me-2">{{ error }}</small>
                     {% endif %}
-                    <input type="text" class="login-input" name="username" placeholder="Username" required>
-                    <input type="password" class="login-input" name="password" placeholder="Password" required>
+                    <input type="text" class="login-input" name="username" placeholder="Username" aria-label="Username" required>
+                    <input type="password" class="login-input" name="password" placeholder="Password" aria-label="Password" required>
                     <button class="btn btn-login btn-sm px-4 py-2" type="submit">Login</button>
                 </form>
             </div>
@@ -384,7 +420,9 @@
                             <li>Locker Room Access</li>
                             <li>Standard Support</li>
                         </ul>
-                        <a href="#contact" class="btn btn-outline-light w-100">Inquire Now</a>
+                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%201%20Month%20Membership%20Plan%20at%20Fit%20Mafia." target="_blank" class="btn btn-outline-whatsapp w-100">
+                            <i class="bi bi-whatsapp"></i> Enquire Now
+                        </a>
                     </div>
                 </div>
 
@@ -400,7 +438,9 @@
                             <li>Diet Plan Consultation</li>
                             <li>Locker Room Access</li>
                         </ul>
-                        <a href="#contact" class="btn btn-hero w-100">Inquire Now</a>
+                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%206%20Months%20Membership%20Plan%20at%20Fit%20Mafia." target="_blank" class="btn btn-whatsapp w-100">
+                            <i class="bi bi-whatsapp"></i> Enquire Now
+                        </a>
                     </div>
                 </div>
 
@@ -416,7 +456,9 @@
                             <li>Free Gym Merchandise</li>
                             <li>Priority Support</li>
                         </ul>
-                        <a href="#contact" class="btn btn-outline-light w-100">Inquire Now</a>
+                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%2012%20Months%20Membership%20Plan%20at%20Fit%20Mafia." target="_blank" class="btn btn-outline-whatsapp w-100">
+                            <i class="bi bi-whatsapp"></i> Enquire Now
+                        </a>
                     </div>
                 </div>
             </div>
@@ -471,14 +513,14 @@
                     <div class="contact-card">
                         <i class="bi bi-geo-alt-fill"></i>
                         <h4>Location</h4>
-                        <p class="text-muted mb-0">123 Fitness Street, Muscle City, State, 123456</p>
+                        <p class="text-muted mb-0">Shop No.28, 91, Korattur Railway Station Rd, Venkatraman Nagar, Korattur, Chennai, Tamil Nadu 600050</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="contact-card">
                         <i class="bi bi-telephone-fill"></i>
                         <h4>Contact</h4>
-                        <p class="text-muted mb-0">Mobile: +91 98765 43210<br>Phone: +91 12345 67890</p>
+                        <p class="text-muted mb-0">Mobile: +91 9551830381</p>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -486,6 +528,25 @@
                         <i class="bi bi-clock-fill"></i>
                         <h4>Timing</h4>
                         <p class="text-muted mb-0">Mon - Sat: 5:00 AM - 10:00 PM<br>Sunday: 6:00 AM - 12:00 PM</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Section -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <!-- Embedded Google Map -->
+                        <iframe
+                            title="Fit Mafia Location Map"
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3885.666992383842!2d80.1852923!3d13.1198539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a526487e411b007%3A0xe5cde78a2e1d93ff!2s91%2C%20Korattur%20Railway%20Station%20Rd%2C%20Venkatraman%20Nagar%2C%20Korattur%2C%20Chennai%2C%20Tamil%20Nadu%20600050!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                            width="100%"
+                            height="400"
+                            style="border:0;"
+                            allowfullscreen=""
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
                     </div>
                 </div>
             </div>
