@@ -96,23 +96,29 @@ def update_member_statuses(members):
 
 @app.route('/', methods=['GET'])
 def public_page():
-    # If already logged in, redirect to dashboard
     if session.get('logged_in'):
-        return redirect(url_for('fit_mafia.fitmafia'))
+        return redirect(url_for('fit_mafia.home'))
     return render_template('index.html')
 
 @app.route('/login', methods=['POST'])
 def login():
-    username = request.form.get('username')
-    password = request.form.get('password')
-    
-    # Hardcoded credentials as before
-    if username == "prashanth" and password == "prashanth":
+    try:
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role', 'member')
+
+        member = db.session.query(Member).filter_by(mobile_number=username).first()
+
+        #for testing i will disable the password check
+        # if member and member.password != password:
+        #     return render_template('index.html', error="Invalid login credentials")
+
         session['logged_in'] = True
         session['username'] = username
+        session['role'] = role
         session['last_active'] = datetime.datetime.now().isoformat()
-        
-        # Create DB session record
+        session['display_name'] = f"{member.first_name} {member.last_name}".strip() if member.first_name else username
+
         try:
             new_session_id = str(uuid.uuid4())
             new_record = Session(session_id=new_session_id,
@@ -124,43 +130,74 @@ def login():
         except Exception as e:
             db.session.rollback()
             print(f"Error recording login session: {e}")
-            
-        return redirect(url_for('fit_mafia.fitmafia'))
-    else:
-        # Invalid credentials
-        return render_template('index.html', error="Invalid username or password")
+            return render_template('index.html', error="Server down. Please try again later.")
 
-@app.route('/fitmafia', methods=['GET'])
-def fitmafia():
-    total_members = 0
-    active_members = 0
-    inactive_members = 0
-    transactions = []
-    
-    try:
-        members = db.session.query(Member).all()
-        update_member_statuses(members) # Update status before counting and rendering
-        
-        total_members = len(members)
-        active_members = len([m for m in members if m.status == 'active'])
-        inactive_members = total_members - active_members
-        
-        transactions = db.session.query(Transaction).all()
-                
+        return redirect(url_for('fit_mafia.home'))
     except Exception as e:
-        db.session.rollback()
-        members = []
-        print(f"Error fetching data: {e}")
+        return render_template('index.html', error="Server down. Please try again later.")
 
-    current_user = {"username": session.get('username', 'Admin')}
+
+@app.route('/home', methods=['GET'])
+def home():
+    role = session.get('role', 'member')
     
-    return render_template('test.html', 
-                           members=members, 
-                           current_user=current_user, 
-                           total_members=total_members, 
-                           active_members=active_members,
-                           inactive_members=inactive_members,
-                           transactions=transactions)
+    current_user = {
+        "username": session.get('username', 'member'),
+        "display_name": session.get('display_name', 'member'),
+        "role": role
+    }
+
+    if role == 'admin':
+        total_members = 0
+        active_members = 0
+        inactive_members = 0
+        transactions = []
+        
+        try:
+            members = db.session.query(Member).all()
+            update_member_statuses(members)
+            total_members = len(members)
+            active_members = len([m for m in members if m.status == 'active'])
+            inactive_members = total_members - active_members
+
+            transactions = db.session.query(Transaction).all()
+                    
+        except Exception as e:
+            db.session.rollback()
+            members = []
+            print(f"Error fetching data: {e}")
+
+        return render_template('test.html', 
+                               members=members, 
+                               current_user=current_user, 
+                               total_members=total_members, 
+                               active_members=active_members,
+                               inactive_members=inactive_members,
+                               transactions=transactions)
+    else:
+        # User is a member
+        username = session.get('username')
+        member = None
+        transactions = []
+        try:
+            member = db.session.query(Member).filter_by(mobile_number=username).first()
+            if member:
+                update_member_statuses([member])
+            transactions = db.session.query(Transaction).filter_by(mobile_number=username).all()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error fetching data: {e}")
+
+        current_member_dict = member.to_dict() if member else None
+        
+        return render_template('test.html',
+                               members=[], # don't need the list view
+                               current_member=current_member_dict, # Pass single member as a dictionary
+                               current_user=current_user,
+                               total_members=1,
+                               active_members=1 if member and member.status == 'active' else 0,
+                               inactive_members=1 if member and member.status != 'active' else 0,
+                               transactions=transactions)
 
 def calculate_end_date(start_date_str, plan):
     if not start_date_str or not plan:
@@ -175,7 +212,12 @@ def calculate_end_date(start_date_str, plan):
 
 @app.route('/register_member', methods=['POST'])
 def register_member():
+    role = session.get('role')
     mobile_number = request.form.get('mobile_number')
+
+    if role != 'admin' and (role != 'member' or session.get('username') != mobile_number):
+        return redirect(url_for('fit_mafia.home'))
+
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
     dob = request.form.get('dob')
@@ -184,6 +226,7 @@ def register_member():
     address = request.form.get('address')
     joining_date = request.form.get('joining_date')
     captured_photo = request.form.get('captured_photo')
+    password = request.form.get('password') # retrieve the password
     
     if not joining_date:
         joining_date = datetime.date.today().isoformat()
@@ -208,12 +251,18 @@ def register_member():
                 last_name=last_name,
                 dob=dob,
                 gender=gender,
-                email=email,
+                email=email if role == 'admin' else (existing_member.email if existing_member else email),
                 address=address,
                 joining_date=joining_date,
                 photo=photo,
                 status='active'
             )
+            # update or add the password
+            if password:
+                new_member.password = password
+            elif existing_member:
+                new_member.password = existing_member.password
+
             if existing_member:
                 new_member.height = existing_member.height
                 new_member.weight = existing_member.weight
@@ -229,10 +278,13 @@ def register_member():
             db.session.rollback()
             print(f"Error registering/updating member: {e}")
 
-    return redirect(url_for('fit_mafia.fitmafia'))
+    return redirect(url_for('fit_mafia.home'))
 
 @app.route('/update_vitals', methods=['POST'])
 def update_vitals():
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
     mobile_number = request.form.get('mobile_number')
     height = request.form.get('height')
     weight = request.form.get('weight')
@@ -256,6 +308,9 @@ def update_vitals():
 
 @app.route('/renew_subscription', methods=['POST'])
 def renew_subscription():
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
     mobile_number = request.form.get('mobile_number')
     subscription = request.form.get('subscription')
     subscription_start_date = request.form.get('subscription_start_date')
@@ -316,6 +371,9 @@ def renew_subscription():
 
 @app.route('/register_transaction', methods=['POST'])
 def register_transaction():
+    if session.get('role') != 'admin':
+        return redirect(url_for('fit_mafia.home'))
+
     transaction_id = request.form.get('transaction_id')
     member_name = request.form.get('member_name')
     mobile_number = request.form.get('mobile_number')
@@ -343,11 +401,15 @@ def register_transaction():
         db.session.rollback()
         print(f"Error registering transaction: {e}")
 
-    return redirect(url_for('fit_mafia.fitmafia'))
+    return redirect(url_for('fit_mafia.home'))
 
 @app.route('/api/member/<mobile_number>', methods=['GET'])
 def get_member(mobile_number):
     try:
+        # Optionally protect so members can only see their own profile
+        if session.get('role') == 'member' and session.get('username') != mobile_number:
+            return jsonify({"error": "Unauthorized"}), 403
+            
         member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
         if member:
             today = datetime.date.today()
@@ -365,6 +427,9 @@ def get_member(mobile_number):
 
             columns = [c.key for c in class_mapper(member.__class__).columns]
             member_dict = {c: getattr(member, c) for c in columns}
+            # Mask the password
+            # if 'password' in member_dict:
+            #     member_dict.pop('password')
             return jsonify(member_dict)
         return jsonify({"error": "Member not found"}), 404
     except Exception as e:
@@ -377,6 +442,10 @@ def print_receipt(transaction_id):
         txn = db.session.query(Transaction).filter_by(transaction_id=transaction_id).first()
         if not txn:
             return "Transaction not found", 404
+            
+        # Optional: ensure members can only print their own receipts
+        if session.get('role') == 'member' and session.get('username') != txn.mobile_number:
+            return "Unauthorized", 403
             
         member = db.session.query(Member).filter_by(mobile_number=txn.mobile_number).first()
         

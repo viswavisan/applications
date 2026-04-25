@@ -327,7 +327,11 @@
                     {% if error %}
                         <small class="text-danger fw-bold me-2">{{ error }}</small>
                     {% endif %}
-                    <input type="text" class="login-input" name="username" placeholder="Username" aria-label="Username" required>
+                    <select name="role" class="login-input" aria-label="Role" required>
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <input type="text" class="login-input" name="username" placeholder="Mobile" aria-label="Mobile" required>
                     <input type="password" class="login-input" name="password" placeholder="Password" aria-label="Password" required>
                     <button class="btn btn-login btn-sm px-4 py-2" type="submit">Login</button>
                 </form>

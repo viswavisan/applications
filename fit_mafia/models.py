@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Column, String, text, Boolean
-from sqlalchemy.orm import scoped_session, declarative_base, sessionmaker
+from sqlalchemy.orm import scoped_session, declarative_base, sessionmaker, class_mapper
 import os
 
 Base = declarative_base()
@@ -48,6 +48,11 @@ class Member(Base):
     subscription_end_date = Column(String, nullable=True)
     photo = Column(String, nullable=True)
     status = Column(String, nullable=True, default='expire')
+    password = Column(String, nullable=True)
+
+    def to_dict(self):
+        """Return a dictionary representation of the model."""
+        return {c.key: getattr(self, c.key) for c in class_mapper(self.__class__).columns}
 
 class Transaction(Base):
     __tablename__ = 'transaction'
