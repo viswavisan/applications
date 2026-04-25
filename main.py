@@ -14,7 +14,7 @@ main_app.permanent_session_lifetime = timedelta(minutes=30)
 main_app.config["API_TITLE"] = "Interview Evaluation API"
 main_app.config["API_VERSION"] = "v1"
 main_app.config["OPENAPI_VERSION"] = "3.0.2"
-main_app.config["OPENAPI_URL_PREFIX"] = "/swagger"
+main_app.config["OPENAPI_URL_PREFIX"] = "/"
 main_app.config["OPENAPI_SWAGGER_UI_PATH"] = "/swagger"
 main_app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 

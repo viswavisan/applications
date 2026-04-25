@@ -1,6 +1,9 @@
 from sqlalchemy import create_engine, Column, String, text, Boolean
-from sqlalchemy.orm import scoped_session, declarative_base, sessionmaker
+from sqlalchemy.orm import scoped_session, declarative_base, sessionmaker, class_mapper
 import os
+import datetime
+from sqlalchemy import case
+from sqlalchemy.ext.hybrid import hybrid_property
 
 Base = declarative_base()
 
@@ -47,7 +50,36 @@ class Member(Base):
     subscription_start_date = Column(String, nullable=True)
     subscription_end_date = Column(String, nullable=True)
     photo = Column(String, nullable=True)
-    status = Column(String, nullable=True, default='expire')
+    password = Column(String, nullable=True)
+
+    @hybrid_property
+    def status(self):
+        """Calculates status in Python code."""
+        if not self.subscription_end_date:
+            return 'expired'
+        
+        try:
+            end_date = datetime.date.fromisoformat(self.subscription_end_date)
+            return 'active' if end_date >= datetime.date.today() else 'expired'
+        except (ValueError, TypeError):
+            # If date is invalid, treat as expired
+            return 'expired'
+
+    @status.expression
+    def status(cls):
+        """Generates the SQL expression for status queries."""
+        today_str = datetime.date.today().isoformat()
+        return case(
+            (cls.subscription_end_date == None, 'expired'),
+            (cls.subscription_end_date < today_str, 'expired'),
+            else_='active'
+        )
+
+    def to_dict(self):
+        """Return a dictionary representation of the model, excluding the password."""
+        column_dict = {c.key: getattr(self, c.key) for c in class_mapper(self.__class__).columns if c.key != 'password'}
+        column_dict['status'] = self.status # Manually add the hybrid property
+        return column_dict
 
 class Transaction(Base):
     __tablename__ = 'transaction'
