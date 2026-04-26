@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 import os
 import uuid
 import base64
-from flask import render_template, Blueprint, request, session, redirect, url_for, jsonify
+from flask import render_template, Blueprint, request, session, redirect, url_for, jsonify, flash
 from fit_mafia.models import db, Session, Member, Transaction
 from sqlalchemy.orm import class_mapper
 
@@ -36,7 +36,7 @@ def handle_session_timeout(now):
 def require_auth():
     """Check authentication before every request in this Blueprint except public endpoints."""
     public_endpoints = ['fit_mafia.public_page', 'fit_mafia.login']
-    
+
     # Allow static files if any
     if request.endpoint and request.endpoint.startswith('static'):
         return None
@@ -68,7 +68,7 @@ def require_auth():
         except Exception as e:
             db.session.rollback()
             print(e)
-        
+
     session['last_active'] = now.isoformat()
     return None
 
@@ -118,7 +118,7 @@ def login():
 @app.route('/home', methods=['GET'])
 def home():
     role = session.get('role', 'member')
-    
+
     current_user = {
         "username": session.get('username', 'member'),
         "display_name": session.get('display_name', 'member'),
@@ -130,7 +130,7 @@ def home():
         active_members = 0
         inactive_members = 0
         transactions = []
-        
+
         try:
             # The hybrid property makes these counts efficient and always accurate
             total_members = db.session.query(Member).count()
@@ -141,16 +141,16 @@ def home():
             members = db.session.query(Member).all()
 
             transactions = db.session.query(Transaction).all()
-                    
+
         except Exception as e:
             db.session.rollback()
             members = []
             print(f"Error fetching data: {e}")
 
         return render_template('home.html',
-                               members=members, 
-                               current_user=current_user, 
-                               total_members=total_members, 
+                               members=members,
+                               current_user=current_user,
+                               total_members=total_members,
                                active_members=active_members,
                                inactive_members=inactive_members,
                                transactions=transactions)
@@ -168,7 +168,7 @@ def home():
             print(f"Error fetching data: {e}")
 
         current_member_dict = member.to_dict() if member else None
-        
+
         return render_template('home.html',
                                members=[], # don't need the list view
                                current_member=current_member_dict, # Pass single member as a dictionary
@@ -197,6 +197,11 @@ def register_member():
     if role != 'admin' and (role != 'member' or session.get('username') != mobile_number):
         return redirect(url_for('fit_mafia.home'))
 
+    existing_member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
+    if existing_member:
+        flash(f"Member with mobile number {mobile_number} already exists.", "error")
+        return redirect(url_for('fit_mafia.home'))
+
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
     dob = request.form.get('dob')
@@ -206,7 +211,7 @@ def register_member():
     joining_date = request.form.get('joining_date')
     captured_photo = request.form.get('captured_photo')
     password = request.form.get('password') # retrieve the password
-    
+
     if not joining_date:
         joining_date = datetime.date.today().isoformat()
 
@@ -218,42 +223,24 @@ def register_member():
     elif captured_photo:
         photo = captured_photo
 
-    if mobile_number:
-        try:
-            existing_member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
-            if existing_member and not photo:
-                photo = existing_member.photo
-                
-            new_member = Member(
-                mobile_number=mobile_number,
-                first_name=first_name,
-                last_name=last_name,
-                dob=dob,
-                gender=gender,
-                email=email if role == 'admin' else (existing_member.email if existing_member else email),
-                address=address,
-                joining_date=joining_date,
-                photo=photo
-            )
-            # update or add the password
-            if password:
-                new_member.password = password
-            elif existing_member:
-                new_member.password = existing_member.password
-
-            if existing_member:
-                new_member.height = existing_member.height
-                new_member.weight = existing_member.weight
-                new_member.bmi = existing_member.bmi
-                new_member.subscription = existing_member.subscription
-                new_member.subscription_start_date = existing_member.subscription_start_date
-                new_member.subscription_end_date = existing_member.subscription_end_date
-
-            db.session.merge(new_member)
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error registering/updating member: {e}")
+    try:
+        new_member = Member(
+            mobile_number=mobile_number,
+            first_name=first_name,
+            last_name=last_name,
+            dob=dob,
+            gender=gender,
+            email=email,
+            address=address,
+            joining_date=joining_date,
+            photo=photo,
+            password=password
+        )
+        db.session.add(new_member)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error registering/updating member: {e}")
 
     return redirect(url_for('fit_mafia.home'))
 
@@ -310,13 +297,13 @@ def renew_subscription():
 
                 today = datetime.date.today()
                 db.session.commit()
-                
+
                 if amount and payment_method:
                     transaction_id = f"TXN{str(uuid.uuid4())[:8].upper()}"
                     member_name = f"{member.first_name or ''} {member.last_name or ''}".strip()
                     if not member_name:
                         member_name = member.mobile_number
-                        
+
                     new_txn = Transaction(
                         transaction_id=transaction_id,
                         member_name=member_name,
@@ -350,7 +337,7 @@ def register_transaction():
     amount = request.form.get('amount')
     payment_method = request.form.get('payment_method')
     status = request.form.get('status')
-    
+
     if not transaction_id:
         transaction_id = f"TXN{str(uuid.uuid4())[:8].upper()}"
 
@@ -400,7 +387,7 @@ def print_receipt(transaction_id):
             return "Unauthorized", 403
             
         member = db.session.query(Member).filter_by(mobile_number=txn.mobile_number).first()
-        
+
         return render_template('receipt.html', txn=txn, member=member)
     except Exception as e:
         print(e)
