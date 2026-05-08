@@ -6,7 +6,7 @@ import base64
 from flask import render_template, Blueprint, request, session, redirect, url_for, jsonify, flash
 from fit_mafia.models import Session, Member, Transaction
 from fit_mafia.db import db
-from fit_mafia.constants import PUBLIC_PAGE
+from fit_mafia.constants import PUBLIC_PAGE, HOME_PAGE, PUBLIC_TEMPLATE, MEMBER_NOT_FOUND
 
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
@@ -77,8 +77,8 @@ def require_auth():
 @app.route('/', methods=['GET'])
 def public_page():
     if session.get('logged_in'):
-        return redirect(url_for('fit_mafia.home'))
-    return render_template('public.html')
+        return redirect(url_for(HOME_PAGE))
+    return render_template(PUBLIC_TEMPLATE)
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -91,7 +91,7 @@ def login():
 
         #for testing, I will disable the password check
         # if member and member.password != password:
-        #     return render_template('public.html', error="Invalid login credentials")
+        #     return render_template(PUBLIC_TEMPLATE, error="Invalid login credentials")
 
         session['logged_in'] = True
         session['username'] = username
@@ -110,11 +110,11 @@ def login():
         except Exception as e:
             db.session.rollback()
             print(f"Error recording login session: {e}")
-            return render_template('public.html', error="Server down. Please try again later.")
+            return render_template(PUBLIC_TEMPLATE, error="Server down. Please try again later.")
 
-        return redirect(url_for('fit_mafia.home'))
+        return redirect(url_for(HOME_PAGE))
     except Exception:
-        return render_template('public.html', error="Server down. Please try again later.")
+        return render_template(PUBLIC_TEMPLATE, error="Server down. Please try again later.")
 
 
 @app.route('/home', methods=['GET'])
@@ -197,12 +197,12 @@ def register_member():
     mobile_number = request.form.get('mobile_number')
 
     if role != 'admin' and (role != 'member' or session.get('username') != mobile_number):
-        return redirect(url_for('fit_mafia.home'))
+        return redirect(url_for(HOME_PAGE))
 
     existing_member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
     if existing_member:
         flash(f"Member with mobile number {mobile_number} already exists.", "error")
-        return redirect(url_for('fit_mafia.home'))
+        return redirect(url_for(HOME_PAGE))
 
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
@@ -244,7 +244,7 @@ def register_member():
         db.session.rollback()
         print(f"Error registering/updating member: {e}")
 
-    return redirect(url_for('fit_mafia.home'))
+    return redirect(url_for(HOME_PAGE))
 
 @app.route('/update_vitals', methods=['POST'])
 def update_vitals():
@@ -265,7 +265,7 @@ def update_vitals():
                 member.bmi = bmi
                 db.session.commit()
                 return jsonify({"success": True})
-            return jsonify({"error": "Member not found"}), 404
+            return jsonify({"error": MEMBER_NOT_FOUND}), 404
         except Exception as e:
             db.session.rollback()
             print(f"Error updating vitals: {e}")
@@ -320,7 +320,7 @@ def renew_subscription():
                     db.session.commit()
 
                 return jsonify({"success": True})
-            return jsonify({"error": "Member not found"}), 404
+            return jsonify({"error": MEMBER_NOT_FOUND}), 404
         except Exception as e:
             db.session.rollback()
             print(f"Error renewing subscription: {e}")
@@ -330,7 +330,7 @@ def renew_subscription():
 @app.route('/register_transaction', methods=['POST'])
 def register_transaction():
     if session.get('role') != 'admin':
-        return redirect(url_for('fit_mafia.home'))
+        return redirect(url_for(HOME_PAGE))
 
     transaction_id = request.form.get('transaction_id')
     member_name = request.form.get('member_name')
@@ -359,7 +359,7 @@ def register_transaction():
         db.session.rollback()
         print(f"Error registering transaction: {e}")
 
-    return redirect(url_for('fit_mafia.home'))
+    return redirect(url_for(HOME_PAGE))
 
 @app.route('/api/member/<mobile_number>', methods=['GET'])
 def get_member(mobile_number):
@@ -372,7 +372,7 @@ def get_member(mobile_number):
         if member:
             # The status is now a property, no update function needed. It will be correct when accessed.
             return jsonify(member.to_dict())
-        return jsonify({"error": "Member not found"}), 404
+        return jsonify({"error": MEMBER_NOT_FOUND}), 404
     except Exception as e:
         print(e)
         return jsonify({"error": "An error occurred"}), 500
