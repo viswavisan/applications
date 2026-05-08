@@ -4,8 +4,10 @@ import os
 import uuid
 import base64
 from flask import render_template, Blueprint, request, session, redirect, url_for, jsonify, flash
-from fit_mafia.models import db, Session, Member, Transaction
-from sqlalchemy.orm import class_mapper
+from fit_mafia.models import Session, Member, Transaction
+from fit_mafia.db import db
+from fit_mafia.constants import PUBLIC_PAGE
+
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
 app = Blueprint('fit_mafia', __name__, template_folder=template_dir)
@@ -35,7 +37,7 @@ def handle_session_timeout(now):
 @app.before_request
 def require_auth():
     """Check authentication before every request in this Blueprint except public endpoints."""
-    public_endpoints = ['fit_mafia.public_page', 'fit_mafia.login']
+    public_endpoints = [PUBLIC_PAGE, 'fit_mafia.login']
 
     # Allow static files if any
     if request.endpoint and request.endpoint.startswith('static'):
@@ -46,13 +48,13 @@ def require_auth():
 
     # Check if user is logged in
     if 'logged_in' not in session or not session['logged_in']:
-        return redirect(url_for('fit_mafia.public_page'))
+        return redirect(url_for(PUBLIC_PAGE))
             
     now = datetime.datetime.now()
 
     if handle_session_timeout(now):
         # Redirect to public page with an optional message or just basic redirect
-        return redirect(url_for('fit_mafia.public_page'))
+        return redirect(url_for(PUBLIC_PAGE))
 
     session.permanent = True
     if 'session_id' not in session:
@@ -87,7 +89,7 @@ def login():
 
         member = db.session.query(Member).filter_by(mobile_number=username).first()
 
-        #for testing i will disable the password check
+        #for testing, I will disable the password check
         # if member and member.password != password:
         #     return render_template('public.html', error="Invalid login credentials")
 
@@ -111,7 +113,7 @@ def login():
             return render_template('public.html', error="Server down. Please try again later.")
 
         return redirect(url_for('fit_mafia.home'))
-    except Exception as e:
+    except Exception:
         return render_template('public.html', error="Server down. Please try again later.")
 
 
@@ -407,4 +409,4 @@ def logout():
             print(f"Error updating session end_time: {e}")
             
     session.clear()
-    return redirect(url_for('fit_mafia.public_page'))
+    return redirect(url_for(PUBLIC_PAGE))

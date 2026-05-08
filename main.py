@@ -2,6 +2,9 @@ from flask import Flask
 from flask_smorest import Api
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+load_dotenv()
+
 from Interview_evaluation.app import app as interview_blueprint
 from fit_mafia.app import app as fit_mafia_blueprint
 from migrations import run_alembic_commands

@@ -7,3 +7,6 @@ werkzeug==3.0.3
 alembic==1.13.1
 python-dateutil==2.9.0
 psycopg2-binary
+oci==2.173.1
+oracledb
+python-dotenv
