@@ -1,25 +1,25 @@
 import os
+from sqlalchemy import engine_from_config, pool
+from alembic import context
+
+from fit_mafia.db import Base 
+target_metadata = Base.metadata
+
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-from alembic import context
 config = context.config
+if DATABASE_URL:
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from Interview_evaluation.models import Base
-target_metadata = Base.metadata
-
-# Override sqlalchemy.url with environment variable if present
-db_url = os.getenv("DATABASE_URL")
-if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:
-    print('running offline')
+
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -33,7 +33,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    print('running online')
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
