@@ -79,7 +79,7 @@
             background-color: rgba(255, 255, 255, 0.15);
             border-color: var(--primary-color);
             outline: none;
-            color: rgb(18, 1, 1);
+            color: rgb(255, 255, 255);
         }
 
         /* Hero Section */
@@ -274,7 +274,7 @@
             padding: 100px 0;
             background-color: var(--dark-bg);
         }
-        .contact-info i {
+        .contact-card i {
             font-size: 2rem;
             color: var(--primary-color);
             margin-bottom: 15px;
@@ -322,15 +322,10 @@
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                 </ul>
 
-                <!-- Inline Login Form -->
                 <form class="d-flex align-items-center mt-3 mt-xl-0 flex-column flex-xl-row gap-2" action="/login" method="POST">
                     {% if error %}
                         <small class="text-danger fw-bold me-2">{{ error }}</small>
                     {% endif %}
-                    <select name="role" class="login-input" aria-label="Role" required>
-                        <option value="member">Member</option>
-                        <option value="admin">Admin</option>
-                    </select>
                     <input type="text" class="login-input" name="username" placeholder="Mobile" aria-label="Mobile" required>
                     <input type="password" class="login-input" name="password" placeholder="Password" aria-label="Password" required>
                     <button class="btn btn-login btn-sm px-4 py-2" type="submit">Login</button>
@@ -536,11 +531,9 @@
                 </div>
             </div>
 
-            <!-- Map Section -->
             <div class="row mt-5">
                 <div class="col-12">
                     <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                        <!-- Embedded Google Map -->
                         <iframe
                             title="Fit Mafia Location Map"
                             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3885.666992383842!2d80.1852923!3d13.1198539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a526487e411b007%3A0xe5cde78a2e1d93ff!2s91%2C%20Korattur%20Railway%20Station%20Rd%2C%20Venkatraman%20Nagar%2C%20Korattur%2C%20Chennai%2C%20Tamil%20Nadu%20600050!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"

@@ -3,15 +3,18 @@ import sys
 import io
 import os
 from flask import Flask, render_template, Blueprint, request
+from flask_smorest import Blueprint
 try:
     from .models import db, Answer
     from .questions import questions
+    from .schemas import AnswerSchema
 except ImportError:
     from models import db, Answer
     from questions import questions
+    from schemas import AnswerSchema
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
-app = Blueprint('main', __name__, template_folder=template_dir)
+app = Blueprint('Evaluation', __name__, template_folder=template_dir)
 
 
 @app.route('/run', methods=['POST'])
@@ -63,6 +66,7 @@ def submit_evaluation():
 
 
 @app.route("/evaluate/<int:candidate_id>", methods=["GET"])
+@app.response(200, AnswerSchema)
 def evaluate(candidate_id):
     try:
         candidate = db.session.get(Answer, candidate_id)
@@ -81,6 +85,7 @@ def evaluate(candidate_id):
         return render_template("evaluate.html", payload=payload)
     except Exception as e:
         return str(e)
+
 @app.route("/admin", methods=["GET"])
 def admin():
     # Admin dashboard logic
@@ -92,4 +97,4 @@ def admin():
 if __name__ == "__main__":
     mainapp = Flask(__name__)
     mainapp.register_blueprint(app)
-    mainapp.run(host='0.0.0.0', port=5000, debug=True)
+    mainapp.run(host='127.0.0.1', port=5000, debug=True)

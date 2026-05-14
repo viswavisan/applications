@@ -16,6 +16,8 @@ class Database:
                     "wallet_location": wallet_path,
                     "wallet_password": os.getenv("DB_WALLET_PASSWORD"),
                 }
+        elif db_url and db_url.startswith("postgres"):
+            kwargs["connect_args"] = {"options": "-c search_path=fitmafia"}
 
         self.engine = create_engine(db_url, **kwargs)
         self.session = scoped_session(sessionmaker(bind=self.engine))
