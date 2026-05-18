@@ -1,0 +1,14 @@
+[Unit]
+Description=Flask App Service
+After=network.target
+
+[Service]
+User=viswa
+WorkingDirectory=/mnt/c/Linux/applications
+ExecStart=/mnt/c/Linux/applications/.venv/bin/python main.py
+Restart=always
+
+EnvironmentFile=/mnt/c/Linux/.env
+
+[Install]
+WantedBy=multi-user.target

@@ -11,3 +11,4 @@ oci==2.173.1
 oracledb
 python-dotenv
 waitress
+flask-restx

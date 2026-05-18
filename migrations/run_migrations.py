@@ -2,6 +2,9 @@ import os
 from alembic.config import Config
 from alembic import command
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class MigrationManager:
     def __init__(self, ini_filename="alembic.ini"):
@@ -50,5 +53,5 @@ class MigrationManager:
 
 if __name__ == "__main__":
     manager = MigrationManager()
-    # manager.create_revision("")
+    manager.create_revision("")
     # manager.upgrade()

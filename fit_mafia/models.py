@@ -4,10 +4,14 @@ import datetime
 from sqlalchemy import case
 from sqlalchemy.ext.hybrid import hybrid_property
 from fit_mafia.db import Base, db
+import os
+
+db_url = os.getenv("DATABASE_URL", "")
+SCHEMA_NAME = None if "sqlite" in db_url else 'fitmafia'
 
 class Session(Base):
     __tablename__ = 'session'
-    __table_args__ = {'schema': 'fitmafia'}
+    __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
     session_id = Column(String, primary_key=True)
     start_time = Column(String, nullable=True)
     end_time = Column(String, nullable=True)
@@ -15,7 +19,7 @@ class Session(Base):
 
 class Member(Base):
     __tablename__ = 'member'
-    __table_args__ = {'schema': 'fitmafia'}
+    __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
     mobile_number = Column(String, primary_key=True)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
@@ -64,7 +68,7 @@ class Member(Base):
 
 class Transaction(Base):
     __tablename__ = 'transaction'
-    __table_args__ = {'schema': 'fitmafia'}
+    __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
     transaction_id = Column(String, primary_key=True)
     member_name = Column(String, nullable=True)
     mobile_number = Column(String, nullable=True)
@@ -74,5 +78,5 @@ class Transaction(Base):
     payment_method = Column(String, nullable=True)
     status = Column(String, nullable=True)
 
-# Ensure tables are created when importing models
-db.init_db()
+# Remove this so it does not auto-initialize tables dynamically on import, which conflicts with Alembic
+# db.init_db()

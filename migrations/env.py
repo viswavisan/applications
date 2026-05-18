@@ -32,6 +32,10 @@ def process_revision_directives(context, revision, directives):
 
 
 def include_name(name, type_, parent_names):
+    # If SQLite, don't filter by schema
+    if DATABASE_URL and "sqlite" in DATABASE_URL:
+        return True
+    
     if type_ == "schema":
         return name == "fitmafia"
     else:
@@ -41,16 +45,22 @@ def include_name(name, type_, parent_names):
 def run_migrations_offline() -> None:
 
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-        process_revision_directives=process_revision_directives,
-        include_schemas=True,   # important!
-        include_name=include_name,
-        version_table_schema="fitmafia"  
-    )
+    
+    # Configure offline settings. Don't use include_schemas or version_table_schema for SQLite
+    context_kwargs = {
+        "url": url,
+        "target_metadata": target_metadata,
+        "literal_binds": True,
+        "dialect_opts": {"paramstyle": "named"},
+        "process_revision_directives": process_revision_directives,
+        "include_name": include_name
+    }
+    
+    if not (DATABASE_URL and "sqlite" in DATABASE_URL):
+        context_kwargs["include_schemas"] = True
+        context_kwargs["version_table_schema"] = "fitmafia"
+
+    context.configure(**context_kwargs)
 
     with context.begin_transaction():
         context.run_migrations()
@@ -65,14 +75,19 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, 
-            target_metadata=target_metadata,
-            process_revision_directives=process_revision_directives,
-            include_schemas=True,   # important!
-            include_name=include_name,
-            version_table_schema="fitmafia"  
-        )
+        # Configure online settings. Don't use include_schemas or version_table_schema for SQLite
+        context_kwargs = {
+            "connection": connection, 
+            "target_metadata": target_metadata,
+            "process_revision_directives": process_revision_directives,
+            "include_name": include_name,
+        }
+        
+        if not (DATABASE_URL and "sqlite" in DATABASE_URL):
+            context_kwargs["include_schemas"] = True
+            context_kwargs["version_table_schema"] = "fitmafia"
+            
+        context.configure(**context_kwargs)
 
         with context.begin_transaction():
             context.run_migrations()
