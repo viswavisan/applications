@@ -28,7 +28,9 @@ jobs:
 
       - name: Run pytest with coverage
         run: |
-          pytest --cov=fit_mafia.app_controller --cov-report=xml
+          pytest --cov=fit_mafia.app_controller --cov-report=xml:coverage.xml
+          coverage run -m pytest
+          coverage xml --include=fit_mafia/app_controller.py -o coverage.xml
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
