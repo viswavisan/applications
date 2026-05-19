@@ -26,6 +26,7 @@ jobs:
 
       - name: Run pytest with coverage
         run: |
+          cd application
           pytest --cov=. --cov-report=xml
         env:
           PYTHONPATH: ${{ github.workspace }}/application
