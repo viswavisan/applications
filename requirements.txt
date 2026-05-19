@@ -12,3 +12,5 @@ oracledb
 python-dotenv
 waitress
 flask-restx
+pytest
+pytest-cov
