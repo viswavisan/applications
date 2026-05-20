@@ -73,7 +73,7 @@ def print_receipt(transaction_id):
 @app.route('/api/member/<mobile_number>', methods=['GET'])
 @app.response(200, MemberSchema)
 def get_member(mobile_number):
-    response=app_controller.get_member(mobile_number)
+    response=app_controller.get_member(mobile_number,session)
     if response['status']=='success':
         return response['message']
     else:

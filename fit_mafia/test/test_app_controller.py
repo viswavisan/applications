@@ -1,7 +1,7 @@
 import pytest
 import datetime
 import base64
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch, MagicMock
 from fit_mafia.app_controller import (
     home, logout, register_transaction, print_receipt,
     register_member, update_vitals, renew_subscription, get_member, login,
@@ -779,7 +779,7 @@ def test_handle_session_timeout_expired_db_exception(mock_db_session, mock_loggi
 
 @patch('fit_mafia.app_controller.db.session')
 def test_create_db_session_success(mock_db_session):
-    username = 'testuser'
+    username = 'test_user'
     session_id = create_db_session(username)
     
     assert session_id is not None
@@ -795,7 +795,7 @@ def test_create_db_session_success(mock_db_session):
 def test_create_db_session_exception(mock_db_session, mock_logging):
     mock_db_session.add.side_effect = Exception("DB Add Error")
     
-    session_id = create_db_session('testuser')
+    session_id = create_db_session('test_user')
     
     assert session_id is None
     mock_db_session.rollback.assert_called_once()
