@@ -32,6 +32,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      - name: Debug coverage.xml
+        run: |
+          echo "--- coverage.xml content ---"
+          cat coverage.xml
+          echo "--------------------------"
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
