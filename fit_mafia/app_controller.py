@@ -14,29 +14,36 @@ from fit_mafia.models import Member, Session, Transaction
 def login(username,password):
     try:
         admin_credentials = {'admin': 'admin'}
-
+        display_name = None
+        
         if username in admin_credentials:
             if admin_credentials[username] == password:
                 role = 'admin'
-                session['display_name'] = 'Admin'
+                display_name = 'Admin'
             else:
                 return {'status': 'failure', 'message': 'Invalid login credentials'}
         else:
             member = db.session.query(Member).filter_by(mobile_number=username).first()
             if member and member.password == password:
                 role = 'member'
-                session['display_name'] = f"{member.first_name} {member.last_name}".strip() or username
+                display_name = f"{member.first_name} {member.last_name}".strip() or username
             else:
                 return {'status': 'failure', 'message': 'Invalid login credentials'}
 
-        session['logged_in'] = True
-        session['username'] = username
-        session['role'] = role
-        session['last_active'] = datetime.datetime.now().isoformat()
+        new_session_id = create_db_session(username)
 
-        create_db_session(username)
-
-        return {'status': 'success', 'message': 'valid login credentials'}
+        return {
+            'status': 'success', 
+            'message': 'valid login credentials',
+            'session_data': {
+                'logged_in': True,
+                'username': username,
+                'role': role,
+                'display_name': display_name,
+                'last_active': datetime.datetime.now().isoformat(),
+                'session_id': new_session_id
+            }
+        }
     except Exception as e:
         logging.error(f"An unexpected error occurred during login: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
@@ -153,7 +160,7 @@ def register_member():
         return {'status': 'failure', 'message': 'Unauthorized'}
 
     if db.session.query(Member).filter_by(mobile_number=mobile_number).first():
-        return {'status': 'failure', 'message': f"Member with mobile number {mobile_number} already exists."}
+        return {'status': 'failure', 'message': f"mobile number already exists."}
 
 
     photo = None
@@ -230,6 +237,7 @@ def renew_subscription():
 
         member.subscription = subscription
         member.subscription_start_date = subscription_start_date
+        print(request.form.get('subscription_end_date'))
         member.subscription_end_date = request.form.get('subscription_end_date') or calculate_end_date(
             subscription_start_date, subscription)
 
@@ -307,10 +315,11 @@ def create_db_session(username):
                              user_name=username)
         db.session.add(new_record)
         db.session.commit()
-        session['session_id'] = new_session_id
+        return new_session_id
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error recording new session for user {username}: {e}")
+        return None
 
 
 def handle_session_timeout(now):

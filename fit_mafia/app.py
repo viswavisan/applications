@@ -87,8 +87,10 @@ def login(args):
     try:
         username = args["username"]
         password = args["password"]
-        response=app_controller.login(username,password)
-        if response['status']=='success':
+        response = app_controller.login(username, password)
+        
+        if response['status'] == 'success':
+            session.update(response['session_data'])
             return redirect(url_for(HOME_PAGE))
         else:
             flash(response['message'], "error")
