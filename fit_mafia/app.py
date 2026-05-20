@@ -109,7 +109,7 @@ def register_transaction():
 
 @app.route('/register_member', methods=['POST'])
 def register_member():
-    response=app_controller.register_member(session)
+    response=app_controller.register_member(session,request.files.to_dict(),request.files.get('photo'))
     if response['status']=='success':
         flash(response['message'], "success")
     else:

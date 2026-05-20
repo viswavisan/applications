@@ -1,5 +1,6 @@
 import pytest
 import datetime
+import base64
 from unittest.mock import patch, MagicMock, ANY
 from fit_mafia.app_controller import (
     home, logout, register_transaction, print_receipt,
@@ -291,74 +292,136 @@ def test_print_receipt_exception(mock_db_session):
 @patch('fit_mafia.app_controller.db.session')
 def test_register_member_success(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'mobile_number': '1234567890',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'dob': '2000-01-01',
+            'gender': 'Male',
+            'email': 'john.doe@example.com',
+            'address': '123 Main St',
+            'joining_date': '2023-01-01',
+            'captured_photo': 'data:image/png;base64,abc',
+            'password': 'password123'
+        }
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        
+        mock_file = MagicMock()
+        mock_file.filename = '' # No file uploaded
 
-            mock_request.form.get.return_value = 'test_data'
-            mock_request.files = {}
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = None # Member doesn't exist
 
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = None # Member doesn't exist
+        result = register_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'success'
+        mock_db_session.add.assert_called_once()
+        mock_db_session.commit.assert_called_once()
 
-            result = register_member(session)
-            assert result['status'] == 'success'
-            mock_db_session.add.assert_called_once()
-            mock_db_session.commit.assert_called_once()
+@patch('fit_mafia.app_controller.db.session')
+def test_register_member_with_file_upload(mock_db_session):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'mobile_number': '1234567890',
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'password': 'password123'
+        }
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        
+        # Mock file object
+        mock_file = MagicMock()
+        mock_file.filename = 'test_photo.png'
+        mock_file.content_type = 'image/png'
+        mock_file.read.return_value = b'test_photo_data'
+
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = None # Member doesn't exist
+
+        result = register_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'success'
+        
+        mock_db_session.add.assert_called_once()
+        added_member = mock_db_session.add.call_args[0][0]
+        
+        assert isinstance(added_member, Member)
+        expected_photo_string = "data:image/png;base64," + base64.b64encode(b'test_photo_data').decode('utf-8')
+        assert added_member.photo == expected_photo_string
+        
+        mock_db_session.commit.assert_called_once()
 
 @patch('fit_mafia.app_controller.db.session')
 def test_register_member_unauthorized(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'member'
-            session['username'] = '1111111111'
-            mock_request.form.get.return_value = '9999999999' # Different mobile number
+        mock_session = {'role': 'member', 'username': '1111111111'}
+        mock_request_data = {'mobile_number': '9999999999'} # Different mobile number
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = ''
 
-            result = register_member(session)
-            assert result['status'] == 'failure'
-            assert result['message'] == 'Unauthorized'
+        result = register_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'failure'
+        assert result['message'] == 'Unauthorized'
 
 @patch('fit_mafia.app_controller.db.session')
 def test_register_member_already_exists(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
-            mobile_number = '1234567890'
-            mock_request.form.get.return_value = mobile_number
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+        mock_request_data = {'mobile_number': mobile_number}
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = ''
 
-            # Simulate member already exists
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = MagicMock(spec=Member)
+        # Simulate member already exists
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = MagicMock(spec=Member)
 
-            result = register_member(session)
-            assert result['status'] == 'failure'
-            assert "mobile number already exists." in result['message']
+        result = register_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'failure'
+        assert "mobile number already exists." in result['message']
 
 @patch('fit_mafia.app_controller.logging')
 @patch('fit_mafia.app_controller.db.session')
 def test_register_member_exception(mock_db_session, mock_logging):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
-            mock_request.form.get.return_value = '1234567890'
-            mock_request.files = {}
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'mobile_number': '1234567890',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'dob': '2000-01-01',
+            'gender': 'Male',
+            'email': 'john.doe@example.com',
+            'address': '123 Main St',
+            'joining_date': '2023-01-01',
+            'captured_photo': 'data:image/png;base64,abc',
+            'password': 'password123'
+        }
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = ''
 
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = None # Member doesn't exist
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = None # Member doesn't exist
 
-            mock_db_session.add.side_effect = Exception("DB Add Error")
+        mock_db_session.add.side_effect = Exception("DB Add Error")
 
-            result = register_member(session)
-            assert result['status'] == 'error'
-            assert result['message'] == INTERNAL_SERVER_ERROR
-            mock_db_session.rollback.assert_called_once()
-            mock_logging.error.assert_called_once()
+        result = register_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'error'
+        assert result['message'] == INTERNAL_SERVER_ERROR
+        mock_db_session.rollback.assert_called_once()
+        mock_logging.error.assert_called_once()
 
 
 @patch('fit_mafia.app_controller.db.session')

@@ -4,7 +4,6 @@ import logging
 import uuid
 
 from dateutil.relativedelta import relativedelta
-from flask import request
 
 from fit_mafia.constants import MEMBER_NOT_FOUND,INTERNAL_SERVER_ERROR
 from fit_mafia.db import db
@@ -14,7 +13,6 @@ from fit_mafia.models import Member, Session, Transaction
 def login(username,password):
     try:
         admin_credentials = {'admin': 'admin'}
-        display_name = None
         
         if username in admin_credentials:
             if admin_credentials[username] == password:
@@ -150,7 +148,7 @@ def print_receipt(transaction_id,session):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-def register_member(session):
+def register_member(session,request,file):
     role = session.get('role')
     mobile_number = request.get('mobile_number')
 
@@ -162,25 +160,25 @@ def register_member(session):
 
 
     photo = None
-    if 'photo' in request.files and request.files['photo'].filename != '':
-        photo_file = request.files['photo']
-        photo_bytes = photo_file.read()
+    if file and file.filename != '':
+        photo_file = file
+        photo_bytes = file.read()
         photo = "data:" + photo_file.content_type + ";base64," + base64.b64encode(photo_bytes).decode('utf-8')
-    elif request.form.get('captured_photo'):
-        photo = request.form.get('captured_photo')
+    elif request.get('captured_photo'):
+        photo = request.get('captured_photo')
 
     try:
         new_member = Member(
             mobile_number=mobile_number,
-            first_name=request.form.get('first_name'),
-            last_name=request.form.get('last_name'),
-            dob=request.form.get('dob'),
-            gender=request.form.get('gender'),
-            email=request.form.get('email'),
-            address=request.form.get('address'),
-            joining_date=request.form.get('joining_date') or datetime.date.today().isoformat(),
+            first_name=request.get('first_name'),
+            last_name=request.get('last_name'),
+            dob=request.get('dob'),
+            gender=request.get('gender'),
+            email=request.get('email'),
+            address=request.get('address'),
+            joining_date=request.get('joining_date') or datetime.date.today().isoformat(),
             photo=photo,
-            password=request.form.get('password')
+            password=request.get('password')
         )
         db.session.add(new_member)
         db.session.commit()
