@@ -2,6 +2,7 @@ from flask import Flask
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+from flask_wtf.csrf import CSRFProtect
 
 load_dotenv()
 
@@ -11,10 +12,13 @@ from health_check import app as health_blueprint
 from swagger import configure_swagger
 
 main_app = Flask(__name__)
-main_app.config['WTF_CSRF_ENABLED'] = False
 
+# Set a secret key, essential for CSRF protection
 main_app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 main_app.permanent_session_lifetime = timedelta(minutes=30)
+
+# Initialize CSRF protection
+csrf = CSRFProtect(main_app)
 
 swagger=configure_swagger(main_app)
 swagger.register_blueprint(fit_mafia_blueprint)
