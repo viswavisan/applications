@@ -1,8 +1,9 @@
 from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 
 def create_app():
     app = Flask(__name__)
-    app.config['WTF_CSRF_ENABLED'] = False
+    csrf = CSRFProtect(app)
     app.config['TESTING'] = True
     app.config['SECRET_KEY'] = 'test_secret_key'
     return app
