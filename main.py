@@ -11,6 +11,7 @@ from health_check import app as health_blueprint
 from swagger import configure_swagger
 
 main_app = Flask(__name__)
+main_app.config['WTF_CSRF_ENABLED'] = False
 
 main_app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 main_app.permanent_session_lifetime = timedelta(minutes=30)

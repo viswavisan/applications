@@ -1,15 +1,9 @@
 from flask import Flask
 
 def create_app():
-    app = Flask(__name__)
-    app.config['TESTING'] = True
-    app.config['SECRET_KEY'] = 'test_secret_key'
-    
-    # You might need to initialize your database or other extensions here
-    # For example:
-    # from fit_mafia.db import db
-    # db.init_app(app)
-    
-    return app
+    test_app = Flask(__name__)
+    test_app.config['TESTING'] = True
+    test_app.config['WTF_CSRF_ENABLED'] = False
+    return test_app
 
 app = create_app()
