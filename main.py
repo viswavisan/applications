@@ -2,7 +2,6 @@ from flask import Flask
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
-from flask_wtf.csrf import CSRFProtect
 
 load_dotenv()
 
@@ -15,7 +14,6 @@ main_app = Flask(__name__)
 
 main_app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 main_app.permanent_session_lifetime = timedelta(minutes=30)
-csrf = CSRFProtect(main_app)
 
 swagger=configure_swagger(main_app)
 swagger.register_blueprint(fit_mafia_blueprint)
@@ -24,7 +22,7 @@ swagger.register_blueprint(interview_blueprint)
 
 
 if __name__ == "__main__":
-    main_app.run(host='127.0.0.1', port=5000)
+    main_app.run(host='127.0.0.1', port=5001, debug=True)
     #workslocal http 5000 --name visan
     # sudo
     # firewall - cmd - -permanent - -add - service = http
