@@ -13,11 +13,8 @@ from swagger import configure_swagger
 
 main_app = Flask(__name__)
 
-# Set a secret key, essential for CSRF protection
 main_app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 main_app.permanent_session_lifetime = timedelta(minutes=30)
-
-# Initialize CSRF protection
 csrf = CSRFProtect(main_app)
 
 swagger=configure_swagger(main_app)
