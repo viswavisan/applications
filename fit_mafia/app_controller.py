@@ -4,7 +4,7 @@ import logging
 import uuid
 
 from dateutil.relativedelta import relativedelta
-from flask import request, session
+from flask import request
 
 from fit_mafia.constants import MEMBER_NOT_FOUND,INTERNAL_SERVER_ERROR
 from fit_mafia.db import db
@@ -49,7 +49,7 @@ def login(username,password):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-def home():
+def home(session):
     role = session.get('role', 'member')
     username = session.get('username')
     current_user = {
@@ -96,8 +96,7 @@ def home():
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-
-def logout():
+def logout(session):
     session_id = session.get('session_id')
     if session_id:
         try:
@@ -111,19 +110,19 @@ def logout():
     session.clear()
 
 
-def register_transaction():
+def register_transaction(session,request):
     if session.get('role') != 'admin':
         return {'status': 'error', 'message': 'An error occurred while registering transaction.'}
 
     try:
         new_txn = Transaction(
-            transaction_id=request.form.get('transaction_id') or f"TXN{str(uuid.uuid4())[:8].upper()}",
-            member_name=request.form.get('member_name'),
-            mobile_number=request.form.get('mobile_number'),
-            date=request.form.get('date'),
-            amount=request.form.get('amount'),
-            payment_method=request.form.get('payment_method'),
-            status=request.form.get('status')
+            transaction_id=request.get('transaction_id') or f"TXN{str(uuid.uuid4())[:8].upper()}",
+            member_name=request.get('member_name'),
+            mobile_number=request.get('mobile_number'),
+            date=request.get('date'),
+            amount=request.get('amount'),
+            payment_method=request.get('payment_method'),
+            status=request.get('status')
         )
         db.session.merge(new_txn)
         db.session.commit()
@@ -134,7 +133,7 @@ def register_transaction():
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-def print_receipt(transaction_id):
+def print_receipt(transaction_id,session):
     try:
         txn = db.session.query(Transaction).filter_by(transaction_id=transaction_id).first()
         if not txn:
@@ -151,16 +150,15 @@ def print_receipt(transaction_id):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-
-def register_member():
+def register_member(session):
     role = session.get('role')
-    mobile_number = request.form.get('mobile_number')
+    mobile_number = request.get('mobile_number')
 
     if role != 'admin' and (role != 'member' or session.get('username') != mobile_number):
         return {'status': 'failure', 'message': 'Unauthorized'}
 
     if db.session.query(Member).filter_by(mobile_number=mobile_number).first():
-        return {'status': 'failure', 'message': f"mobile number already exists."}
+        return {'status': 'failure', 'message': "mobile number already exists."}
 
 
     photo = None
@@ -194,20 +192,20 @@ def register_member():
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-def update_vitals():
+def update_vitals(session,request):
     if session.get('role') != 'admin':
         return {'status':'error','message':'Unauthorized','code':403}
 
-    mobile_number = request.form.get('mobile_number')
+    mobile_number = request.get('mobile_number')
     if not mobile_number:
         return {'status': 'error', 'message': 'Mobile number required', 'code': 400}
 
     try:
         member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
         if member:
-            member.height = request.form.get('height')
-            member.weight = request.form.get('weight')
-            member.bmi = request.form.get('bmi')
+            member.height = request.get('height')
+            member.weight = request.get('weight')
+            member.bmi = request.get('bmi')
             db.session.commit()
             return {'status': 'success', 'message': True, 'code': 200}
         return  {'status': 'error', 'message': MEMBER_NOT_FOUND, 'code': 404}
@@ -217,15 +215,13 @@ def update_vitals():
         logging.error(f"Error updating vitals: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR, 'code': 500}
 
-
-
-def renew_subscription():
+def renew_subscription(session,request):
     if session.get('role') != 'admin':
         return {'status': 'error', 'message': "Unauthorized", 'code': 403}
 
-    mobile_number = request.form.get('mobile_number')
-    subscription = request.form.get('subscription')
-    subscription_start_date = request.form.get('subscription_start_date')
+    mobile_number = request.get('mobile_number')
+    subscription = request.get('subscription')
+    subscription_start_date = request.get('subscription_start_date')
 
     if not all([mobile_number, subscription, subscription_start_date]):
         return {'status': 'error', 'message': "Missing required parameters", 'code': 400}
@@ -237,14 +233,26 @@ def renew_subscription():
 
         member.subscription = subscription
         member.subscription_start_date = subscription_start_date
-        print(request.form.get('subscription_end_date'))
-        member.subscription_end_date = request.form.get('subscription_end_date') or calculate_end_date(
+
+        member.subscription_end_date = request.get('subscription_end_date') or calculate_end_date(
             subscription_start_date, subscription)
 
         amount = request.form.get('amount')
-        payment_method = request.form.get('payment_method')
+        payment_method = request.get('payment_method')
         if amount and payment_method:
-            create_transaction(member, amount, request.form.get('discount'), payment_method)
+            # create_transaction(member, amount, request.get('discount'), payment_method)
+            new_txn = Transaction(
+                transaction_id=f"{member.first_name or ''} {member.last_name or ''}".strip() or member.mobile_number,
+                member_name=f"{member.first_name or ''} {member.last_name or ''}".strip() or member.mobile_number,
+                mobile_number=member.mobile_number,
+                date=datetime.date.today().isoformat(),
+                amount=amount,
+                discount=request.get('discount'),
+                payment_method=payment_method,
+                status="Completed"
+            )
+
+            db.session.add(new_txn)
 
         db.session.commit()
         return {'status': 'success', 'message': True, 'code': 200}
@@ -254,9 +262,7 @@ def renew_subscription():
         logging.error(f"Error renewing subscription: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR, 'code': 500}
 
-
-
-def get_member(mobile_number):
+def get_member(mobile_number,session):
     try:
         if session.get('role') == 'member' and session.get('username') != mobile_number:
             return {'status': 'error', 'message': "Unauthorized", 'code': 403}
@@ -286,26 +292,6 @@ def calculate_end_date(start_date_str, plan):
         return None
 
 
-def create_transaction(member, amount, discount, payment_method):
-    today = datetime.date.today()
-    transaction_id = f"TXN{str(uuid.uuid4())[:8].upper()}"
-    member_name = f"{member.first_name or ''} {member.last_name or ''}".strip() or member.mobile_number
-
-    new_txn = Transaction(
-        transaction_id=transaction_id,
-        member_name=member_name,
-        mobile_number=member.mobile_number,
-        date=today.isoformat(),
-        amount=amount,
-        discount=discount,
-        payment_method=payment_method,
-        status="Completed"
-    )
-    db.session.add(new_txn)
-
-
-
-
 def create_db_session(username):
     """Creates and records a new session in the database."""
     try:
@@ -322,7 +308,7 @@ def create_db_session(username):
         return None
 
 
-def handle_session_timeout(now):
+def handle_session_timeout(now,session):
     if 'last_active' not in session:
         return False
     last_active = datetime.datetime.fromisoformat(session['last_active'])

@@ -88,7 +88,7 @@ def test_home_admin(mock_db_session):
         mock_query = mock_db_session.query.return_value
         mock_query.all.return_value = [mock_member]
 
-        result = home()
+        result = home(session)
         assert result['status'] == 'success'
         assert result['template_data']['total_members'] == 1
         assert result['template_data']['active_members'] == 1
@@ -109,7 +109,7 @@ def test_home_member_success(mock_db_session):
         mock_filter.first.return_value = mock_member
         mock_filter.all.return_value = []
 
-        result = home()
+        result = home(session)
         assert result['status'] == 'success'
         assert result['template_data']['current_member']['name'] == 'Test'
 
@@ -124,7 +124,7 @@ def test_home_member_not_found(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = None # Simulate member not found
         
-        result = home()
+        result = home(session)
         assert result['status'] == 'failure'
         assert "Member not found" in result['message']
 
@@ -132,7 +132,7 @@ def test_home_member_not_found(mock_db_session):
 def test_home_exception(mock_db_session):
     with app.test_request_context():
         mock_db_session.query.side_effect = Exception("Database error")
-        result = home()
+        result = home({})
         assert result == {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 # --- LOGOUT TESTS ---
@@ -148,7 +148,7 @@ def test_logout(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = mock_record
 
-        logout()
+        logout(session)
         assert 'session_id' not in session
         assert mock_record.end_time is not None
         mock_db_session.commit.assert_called_once()
@@ -168,7 +168,7 @@ def test_logout_exception(mock_db_session, mock_logging):
         # Simulate a database error on commit
         mock_db_session.commit.side_effect = Exception("DB Error")
 
-        logout()
+        logout(session)
 
         mock_db_session.rollback.assert_called_once()
         mock_logging.error.assert_called_once()
@@ -180,24 +180,28 @@ def test_logout_exception(mock_db_session, mock_logging):
 @patch('fit_mafia.app_controller.db.session')
 def test_register_transaction_admin(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'transaction_id': 'TXN123',
+            'member_name': 'Test Member',
+            'mobile_number': '9876543210',
+            'date': '2023-01-01',
+            'amount': '500',
+            'payment_method': 'Credit Card',
+            'status': 'Completed'
+        }
 
-            mock_request.form.get.return_value = 'test_data'
-
-            result = register_transaction()
-            assert result['status'] == 'success'
-            mock_db_session.merge.assert_called_once()
-            mock_db_session.commit.assert_called_once()
+        result = register_transaction(mock_session, mock_request_data)
+        assert result['status'] == 'success'
+        mock_db_session.merge.assert_called_once()
+        mock_db_session.commit.assert_called_once()
 
 @patch('fit_mafia.app_controller.db.session')
 def test_register_transaction_unauthorized(mock_db_session):
     with app.test_request_context():
-        from flask import session
-        session['role'] = 'member'
+        mock_session = {'role': 'member'}
 
-        result = register_transaction()
+        result = register_transaction(mock_session, {})
         assert result['status'] == 'error'
         mock_db_session.merge.assert_not_called()
 
@@ -205,22 +209,25 @@ def test_register_transaction_unauthorized(mock_db_session):
 @patch('fit_mafia.app_controller.db.session')
 def test_register_transaction_exception(mock_db_session, mock_logging):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'transaction_id': 'TXN123',
+            'member_name': 'Test Member',
+            'mobile_number': '9876543210',
+            'date': '2023-01-01',
+            'amount': '500',
+            'payment_method': 'Credit Card',
+            'status': 'Completed'
+        }
+        
+        mock_db_session.merge.side_effect = Exception("DB Merge Error")
 
-            mock_request.form.get.return_value = 'test_data'
+        result = register_transaction(mock_session, mock_request_data)
 
-            # Simulate an exception when trying to merge the transaction
-            mock_db_session.merge.side_effect = Exception("DB Merge Error")
-
-            result = register_transaction()
-
-            # Verify the exception was handled correctly
-            assert result['status'] == 'error'
-            assert result['message'] == INTERNAL_SERVER_ERROR
-            mock_db_session.rollback.assert_called_once()
-            mock_logging.error.assert_called_once()
+        assert result['status'] == 'error'
+        assert result['message'] == INTERNAL_SERVER_ERROR
+        mock_db_session.rollback.assert_called_once()
+        mock_logging.error.assert_called_once()
 
 
 # --- PRINT RECEIPT TESTS ---
@@ -238,7 +245,7 @@ def test_print_receipt_success(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = mock_txn
 
-        result = print_receipt('TXN123')
+        result = print_receipt('TXN123',session)
         assert result['status'] == 'success'
 
 @patch('fit_mafia.app_controller.db.session')
@@ -248,7 +255,7 @@ def test_print_receipt_not_found(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = None  # Simulate transaction not found
 
-        result = print_receipt('TXN_NOT_FOUND')
+        result = print_receipt('TXN_NOT_FOUND',{})
         assert result['status'] == 'failure'
         assert result['message'] == 'Transaction not found.'
 
@@ -266,7 +273,7 @@ def test_print_receipt_unauthorized(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = mock_txn
 
-        result = print_receipt('TXN123')
+        result = print_receipt('TXN123',session)
         assert result['status'] == 'failure'
         assert result['message'] == 'Unauthorized to view this receipt.'
 
@@ -274,7 +281,7 @@ def test_print_receipt_unauthorized(mock_db_session):
 def test_print_receipt_exception(mock_db_session):
     with app.test_request_context():
         mock_db_session.query.side_effect = Exception("DB Error")
-        result = print_receipt('TXN123')
+        result = print_receipt('TXN123',{})
         assert result['status'] == 'error'
         assert result['message'] == INTERNAL_SERVER_ERROR
 
@@ -295,7 +302,7 @@ def test_register_member_success(mock_db_session):
             mock_filter = mock_query.filter_by.return_value
             mock_filter.first.return_value = None # Member doesn't exist
 
-            result = register_member()
+            result = register_member(session)
             assert result['status'] == 'success'
             mock_db_session.add.assert_called_once()
             mock_db_session.commit.assert_called_once()
@@ -309,7 +316,7 @@ def test_register_member_unauthorized(mock_db_session):
             session['username'] = '1111111111'
             mock_request.form.get.return_value = '9999999999' # Different mobile number
 
-            result = register_member()
+            result = register_member(session)
             assert result['status'] == 'failure'
             assert result['message'] == 'Unauthorized'
 
@@ -327,9 +334,9 @@ def test_register_member_already_exists(mock_db_session):
             mock_filter = mock_query.filter_by.return_value
             mock_filter.first.return_value = MagicMock(spec=Member)
 
-            result = register_member()
+            result = register_member(session)
             assert result['status'] == 'failure'
-            assert f"mobile number already exists." in result['message']
+            assert "mobile number already exists." in result['message']
 
 @patch('fit_mafia.app_controller.logging')
 @patch('fit_mafia.app_controller.db.session')
@@ -347,7 +354,7 @@ def test_register_member_exception(mock_db_session, mock_logging):
 
             mock_db_session.add.side_effect = Exception("DB Add Error")
 
-            result = register_member()
+            result = register_member(session)
             assert result['status'] == 'error'
             assert result['message'] == INTERNAL_SERVER_ERROR
             mock_db_session.rollback.assert_called_once()
@@ -357,82 +364,84 @@ def test_register_member_exception(mock_db_session, mock_logging):
 @patch('fit_mafia.app_controller.db.session')
 def test_update_vitals_success(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'mobile_number': '9999999999',
+            'height': '180',
+            'weight': '75',
+            'bmi': '23.1'
+        }
 
-            mock_request.form.get.return_value = '9999999999'
+        mock_member = MagicMock(spec=Member)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
 
-            mock_member = MagicMock(spec=Member)
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = mock_member
-
-            result = update_vitals()
-            assert result['status'] == 'success'
-            mock_db_session.commit.assert_called_once()
+        result = update_vitals(mock_session, mock_request_data)
+        assert result['status'] == 'success'
+        mock_db_session.commit.assert_called_once()
+        assert mock_member.height == '180'
+        assert mock_member.weight == '75'
+        assert mock_member.bmi == '23.1'
 
 def test_update_vitals_unauthorized():
     with app.test_request_context():
-        from flask import session
-        session['role'] = 'member' # Non-admin user
-        result = update_vitals()
+        mock_session = {'role': 'member'} # Non-admin user
+        result = update_vitals(mock_session, {})
         assert result['status'] == 'error'
         assert result['message'] == 'Unauthorized'
         assert result['code'] == 403
 
-# @patch('fit_mafia.app_controller.db.session')
-# def test_update_vitals_missing_mobile(mock_db_session):
-#     with app.test_request_context():
-#         with patch('fit_mafia.app_controller.request') as mock_request:
-#             from flask import session
-#             session['role'] = 'admin'
-#             mock_request.form.get.return_value = None # Missing mobile number
-#
-#             result = update_vitals()
-#             assert result['status'] == 'error'
-#             assert result['message'] == 'Mobile number required'
-#             assert result['code'] == 400
+@patch('fit_mafia.app_controller.db.session')
+def test_update_vitals_missing_mobile(mock_db_session):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'height': '180',
+            'weight': '75',
+            'bmi': '23.1'
+        }
+
+        result = update_vitals(mock_session, mock_request_data)
+        assert result['status'] == 'error'
+        assert result['message'] == 'Mobile number required'
+        assert result['code'] == 400
 
 @patch('fit_mafia.app_controller.db.session')
 def test_update_vitals_member_not_found(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
-            mock_request.form.get.return_value = '0000000000'
+        mock_session = {'role': 'admin'}
+        mock_request_data = {'mobile_number': '0000000000'}
 
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = None # Member not found
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = None # Member not found
 
-            result = update_vitals()
-            assert result['status'] == 'error'
-            assert result['message'] == MEMBER_NOT_FOUND
-            assert result['code'] == 404
+        result = update_vitals(mock_session, mock_request_data)
+        assert result['status'] == 'error'
+        assert result['message'] == MEMBER_NOT_FOUND
+        assert result['code'] == 404
 
 @patch('fit_mafia.app_controller.logging')
 @patch('fit_mafia.app_controller.db.session')
 def test_update_vitals_exception(mock_db_session, mock_logging):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
-            mock_request.form.get.return_value = '9999999999'
+        mock_session = {'role': 'admin'}
+        mock_request_data = {'mobile_number': '9999999999'}
 
-            mock_member = MagicMock(spec=Member)
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = mock_member
+        mock_member = MagicMock(spec=Member)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
 
-            mock_db_session.commit.side_effect = Exception("DB Commit Error")
+        mock_db_session.commit.side_effect = Exception("DB Commit Error")
 
-            result = update_vitals()
-            assert result['status'] == 'error'
-            assert result['message'] == INTERNAL_SERVER_ERROR
-            assert result['code'] == 500
-            mock_db_session.rollback.assert_called_once()
-            mock_logging.error.assert_called_once()
+        result = update_vitals(mock_session, mock_request_data)
+        assert result['status'] == 'error'
+        assert result['message'] == INTERNAL_SERVER_ERROR
+        assert result['code'] == 500
+        mock_db_session.rollback.assert_called_once()
+        mock_logging.error.assert_called_once()
 
 
 # --- RENEW SUBSCRIPTION TESTS ---
@@ -440,83 +449,120 @@ def test_update_vitals_exception(mock_db_session, mock_logging):
 @patch('fit_mafia.app_controller.db.session')
 def test_renew_subscription_success(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
+        mock_session = {'role': 'admin'}
+        
+        mock_request = MagicMock()
+        
+        request_data = {
+            'mobile_number': '9999999999',
+            'subscription': '1 Month',
+            'subscription_start_date': '2023-01-01',
+            'subscription_end_date': '2023-02-01',
+            'amount': '1000',
+            'payment_method': 'Cash',
+            'discount': '10'
+        }
+        
+        mock_request.get.side_effect = lambda key: request_data.get(key)
+        mock_request.form.get.side_effect = lambda key: request_data.get(key)
 
-            def mock_form_get(key):
-                return {
-                    'mobile_number': '9999999999',
-                    'subscription': '1 Month',
-                    'subscription_start_date': '2023-01-01',
-                    'subscription_end_date': None,
-                    'amount': '1000',
-                    'payment_method': 'Cash'
-                }.get(key)
+        mock_member = MagicMock(spec=Member)
+        mock_member.first_name = "John"
+        mock_member.last_name = "Doe"
+        mock_member.mobile_number = "9999999999"
+        
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
 
-            mock_request.form.get.side_effect = mock_form_get
+        result = renew_subscription(mock_session, mock_request)
+        
+        assert result['status'] == 'success'
+        
+        # Verify that a transaction was added to the session
+        mock_db_session.add.assert_called_once()
+        added_object = mock_db_session.add.call_args[0][0]
+        assert isinstance(added_object, Transaction)
+        assert added_object.amount == '1000'
+        assert added_object.payment_method == 'Cash'
 
-            mock_member = MagicMock(spec=Member)
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = mock_member
+        mock_db_session.commit.assert_called_once()
 
-            result = renew_subscription()
-            assert result['status'] == 'success'
-            mock_db_session.commit.assert_called_once()
 
 def test_renew_subscription_unauthorized():
     with app.test_request_context():
-        from flask import session
-        session['role'] = 'member'  # Non-admin user
+        mock_session = {'role': 'member'}
+        mock_request = MagicMock()
 
-        result = renew_subscription()
+        result = renew_subscription(mock_session, mock_request)
         assert result['status'] == 'error'
         assert result['message'] == "Unauthorized"
         assert result['code'] == 403
 
+def test_renew_subscription_missing_params():
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mock_request = MagicMock()
+        mock_request.get.return_value = None
+        mock_request.form.get.return_value = None
+
+        result = renew_subscription(mock_session, mock_request)
+        assert result['status'] == 'error'
+        assert result['message'] == "Missing required parameters"
+        assert result['code'] == 400
+
 @patch('fit_mafia.app_controller.db.session')
 def test_renew_subscription_member_not_found(mock_db_session):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
+        mock_session = {'role': 'admin'}
+        mock_request = MagicMock()
+        request_data = {
+            'mobile_number': '12345',
+            'subscription': '1 Month',
+            'subscription_start_date': '2023-01-01'
+        }
+        mock_request.get.side_effect = lambda key: request_data.get(key)
+        mock_request.form.get.side_effect = lambda key: request_data.get(key)
 
-            mock_request.form.get.return_value = '12345' # All required fields are present
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = None
 
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = None # Simulate member not found
-
-            result = renew_subscription()
-            assert result['status'] == 'error'
-            assert result['message'] == MEMBER_NOT_FOUND
-            assert result['code'] == 404
+        result = renew_subscription(mock_session, mock_request)
+        assert result['status'] == 'error'
+        assert result['message'] == MEMBER_NOT_FOUND
+        assert result['code'] == 404
 
 @patch('fit_mafia.app_controller.logging')
 @patch('fit_mafia.app_controller.db.session')
 def test_renew_subscription_exception(mock_db_session, mock_logging):
     with app.test_request_context():
-        with patch('fit_mafia.app_controller.request') as mock_request:
-            from flask import session
-            session['role'] = 'admin'
+        mock_session = {'role': 'admin'}
+        mock_request = MagicMock()
+        request_data = {
+            'mobile_number': '12345',
+            'subscription': '1 Month',
+            'subscription_start_date': '2023-01-01'
+        }
+        mock_request.get.side_effect = lambda key: request_data.get(key)
+        mock_request.form.get.side_effect = lambda key: request_data.get(key)
 
-            mock_request.form.get.return_value = '12345' # All required fields are present
+        mock_member = MagicMock(spec=Member)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
 
-            mock_member = MagicMock(spec=Member)
-            mock_query = mock_db_session.query.return_value
-            mock_filter = mock_query.filter_by.return_value
-            mock_filter.first.return_value = mock_member
+        mock_db_session.commit.side_effect = Exception("DB Commit Error")
 
-            mock_db_session.commit.side_effect = Exception("DB Commit Error")
+        result = renew_subscription(mock_session, mock_request)
+        assert result['status'] == 'error'
+        assert result['message'] == INTERNAL_SERVER_ERROR
+        assert result['code'] == 500
+        mock_db_session.rollback.assert_called_once()
+        mock_logging.error.assert_called_once()
 
-            result = renew_subscription()
-            assert result['status'] == 'error'
-            assert result['message'] == INTERNAL_SERVER_ERROR
-            assert result['code'] == 500
-            mock_db_session.rollback.assert_called_once()
-            mock_logging.error.assert_called_once()
 
+# --- GET MEMBER TESTS ---
 
 @patch('fit_mafia.app_controller.db.session')
 def test_get_member_success(mock_db_session):
@@ -529,7 +575,7 @@ def test_get_member_success(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = mock_member
 
-        result = get_member('9999999999')
+        result = get_member('9999999999', session)
         assert result['status'] == 'success'
         assert result['message'] == mock_member
 
@@ -541,7 +587,7 @@ def test_get_member_unauthorized(mock_db_session):
         session['username'] = '1111111111'  # Logged in user
 
         # This test doesn't need the database to be called, but we mock it for consistency
-        result = get_member('9999999999') # Trying to access a different member's data
+        result = get_member('9999999999', session) # Trying to access a different member's data
         
         assert result['status'] == 'error'
         assert result['message'] == "Unauthorized"
@@ -557,7 +603,7 @@ def test_get_member_not_found(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = None # Simulate member not found
 
-        result = get_member('0000000000')
+        result = get_member('0000000000', session)
         assert result['status'] == 'error'
         assert result['message'] == MEMBER_NOT_FOUND
         assert result['code'] == 404
@@ -571,7 +617,7 @@ def test_get_member_exception(mock_db_session, mock_logging):
 
         mock_db_session.query.side_effect = Exception("DB Error")
 
-        result = get_member('9999999999')
+        result = get_member('9999999999', session)
         assert result['status'] == 'error'
         assert result['message'] == INTERNAL_SERVER_ERROR
         assert result['code'] == 500
@@ -602,14 +648,14 @@ def test_handle_session_timeout_no_last_active():
     with app.test_request_context():
         from flask import session
         session.clear()
-        assert handle_session_timeout(datetime.datetime.now()) is False
+        assert handle_session_timeout(datetime.datetime.now(),session) is False
 
 def test_handle_session_timeout_not_expired():
     with app.test_request_context():
         from flask import session
         now = datetime.datetime.now()
         session['last_active'] = now.isoformat()
-        assert handle_session_timeout(now) is False
+        assert handle_session_timeout(now,session) is False
 
 @patch('fit_mafia.app_controller.db.session')
 def test_handle_session_timeout_expired_success(mock_db_session):
@@ -625,7 +671,7 @@ def test_handle_session_timeout_expired_success(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = mock_record
 
-        assert handle_session_timeout(now) is True
+        assert handle_session_timeout(now,session) is True
         assert 'last_active' not in session
         mock_db_session.commit.assert_called_once()
 
@@ -642,7 +688,7 @@ def test_handle_session_timeout_expired_no_record(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = None # No record found
 
-        assert handle_session_timeout(now) is True
+        assert handle_session_timeout(now,session) is True
         assert 'last_active' not in session
         mock_db_session.commit.assert_not_called()
 
@@ -663,7 +709,7 @@ def test_handle_session_timeout_expired_db_exception(mock_db_session, mock_loggi
 
         mock_db_session.commit.side_effect = Exception("DB Commit Error")
 
-        assert handle_session_timeout(now) is True
+        assert handle_session_timeout(now,session) is True
         mock_db_session.rollback.assert_called_once()
         mock_logging.error.assert_called_once()
         assert 'last_active' not in session

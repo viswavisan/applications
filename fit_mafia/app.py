@@ -26,7 +26,7 @@ def require_auth():
         return redirect(url_for(PUBLIC_PAGE))
 
     now = datetime.datetime.now()
-    if app_controller.handle_session_timeout(now):
+    if app_controller.handle_session_timeout(now,session):
         return redirect(url_for(PUBLIC_PAGE))
 
     session.permanent = True
@@ -46,7 +46,7 @@ def public_page():
 
 @app.route('/home', methods=['GET'])
 def home():
-    response=app_controller.home()
+    response=app_controller.home(session)
     if response['status']=='success':
         template_data=response['template_data']
         return render_template('home.html', **template_data)
@@ -56,14 +56,14 @@ def home():
 
 @app.route('/logout', methods=['GET'])
 def logout():
-    app_controller.logout()
+    app_controller.logout(session)
     flash("You have been logged out.", "info")
     return redirect(url_for(PUBLIC_PAGE))
 
 
 @app.route('/print_receipt/<transaction_id>', methods=['GET'])
 def print_receipt(transaction_id):
-    response=app_controller.print_receipt(transaction_id)
+    response=app_controller.print_receipt(transaction_id,session)
     if response['status']=='success':
         return render_template(RECEIPT_TEMPLATE, **response['template_data'])
     else:
@@ -100,7 +100,7 @@ def login(args):
 
 @app.route('/register_transaction', methods=['POST'])
 def register_transaction():
-    response=app_controller.register_transaction()
+    response=app_controller.register_transaction(session,request.form.to_dict())
     if response['status']=="success":
         return redirect(url_for(HOME_PAGE))
     else:
@@ -109,7 +109,7 @@ def register_transaction():
 
 @app.route('/register_member', methods=['POST'])
 def register_member():
-    response=app_controller.register_member()
+    response=app_controller.register_member(session)
     if response['status']=='success':
         flash(response['message'], "success")
     else:
@@ -118,10 +118,10 @@ def register_member():
 
 @app.route('/update_vitals', methods=['POST'])
 def update_vitals():
-    response=app_controller.update_vitals()
+    response=app_controller.update_vitals(session, request.form.to_dict())
     return jsonify({response['status']: response['message']}), response['code']
 
 @app.route('/renew_subscription', methods=['POST'])
 def renew_subscription():
-    response=app_controller.renew_subscription()
+    response=app_controller.renew_subscription(session,request.form.to_dict())
     return jsonify({response['status']: response['message']}), response['code']
