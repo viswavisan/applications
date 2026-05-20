@@ -81,7 +81,7 @@ jobs:
     needs: scan   # ensures deploy runs only if tests + scan succeed
     steps:
       - name: Deploy to Oracle VM via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@41b1b06e8d1a494429f433d6a253424a5f30847b
         with:
           host: 140.245.230.89
           username: opc
