@@ -73,5 +73,7 @@ jobs:
     needs: scan   # ensures deploy runs only if tests + scan succeed
     steps:
       - name: Deploy to Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          curl -X POST $RENDER_DEPLOY_HOOK
