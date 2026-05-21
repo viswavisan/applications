@@ -6,7 +6,6 @@ Base = declarative_base()
 
 class Database:
     def __init__(self, db_url):
-        print(db_url)
         kwargs = {}
         if db_url.startswith("oracle"):
             default_wallet_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'wallet')
