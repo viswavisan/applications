@@ -1,10 +1,9 @@
 import pytest
 import datetime
-import base64
 from unittest.mock import patch, MagicMock
 from fit_mafia.app_controller import (
     home, logout, register_transaction, print_receipt,
-    register_member, update_vitals, renew_subscription, get_member, login,
+    register_member, update_member, update_vitals, renew_subscription, get_member, login,
     calculate_end_date, handle_session_timeout, create_db_session
 )
 from fit_mafia.constants import INTERNAL_SERVER_ERROR, MEMBER_NOT_FOUND
@@ -289,27 +288,22 @@ def test_print_receipt_exception(mock_db_session):
 
 # --- MEMBER TESTS ---
 
+@patch('fit_mafia.app_controller.ObjectStorageManager')
 @patch('fit_mafia.app_controller.db.session')
-def test_register_member_success(mock_db_session):
+def test_register_member_success(mock_db_session, mock_storage_manager):
     with app.test_request_context():
         mock_session = {'role': 'admin'}
         mock_request_data = {
             'mobile_number': '1234567890',
             'first_name': 'John',
             'last_name': 'Doe',
-            'dob': '2000-01-01',
-            'gender': 'Male',
-            'email': 'john.doe@example.com',
-            'address': '123 Main St',
-            'joining_date': '2023-01-01',
-            'captured_photo': 'data:image/png;base64,abc',
             'password': 'password123'
         }
         mock_request = MagicMock()
         mock_request.get.side_effect = lambda key: mock_request_data.get(key)
         
         mock_file = MagicMock()
-        mock_file.filename = '' # No file uploaded
+        mock_file.filename = ''
 
         mock_query = mock_db_session.query.return_value
         mock_filter = mock_query.filter_by.return_value
@@ -317,15 +311,50 @@ def test_register_member_success(mock_db_session):
 
         result = register_member(mock_session, mock_request, mock_file)
         assert result['status'] == 'success'
+        assert 'registered' in result['message']
         mock_db_session.add.assert_called_once()
         mock_db_session.commit.assert_called_once()
 
+@patch('fit_mafia.app_controller.ObjectStorageManager')
 @patch('fit_mafia.app_controller.db.session')
-def test_register_member_with_file_upload(mock_db_session):
+def test_update_member_success(mock_db_session, mock_storage_manager):
     with app.test_request_context():
         mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
         mock_request_data = {
-            'mobile_number': '1234567890',
+            'mobile_number': mobile_number,
+            'first_name': 'John Updated',
+            'last_name': 'Doe Updated',
+        }
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        
+        mock_file = MagicMock()
+        mock_file.filename = ''
+
+        # Simulate existing member
+        mock_member = Member(mobile_number=mobile_number, first_name='John', last_name='Doe')
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
+
+        result = update_member(mock_session, mock_request, mock_file)
+        
+        assert result['status'] == 'success'
+        assert 'updated' in result['message']
+        assert mock_member.first_name == 'John Updated'
+        assert mock_member.last_name == 'Doe Updated'
+        mock_db_session.add.assert_not_called() # Should not add a new member
+        mock_db_session.commit.assert_called_once()
+
+@patch('fit_mafia.app_controller.ObjectStorageManager')
+@patch('fit_mafia.app_controller.db.session')
+def test_register_member_with_file_upload(mock_db_session, mock_storage_manager):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+        mock_request_data = {
+            'mobile_number': mobile_number,
             'first_name': 'Jane',
             'last_name': 'Doe',
             'password': 'password123'
@@ -333,27 +362,54 @@ def test_register_member_with_file_upload(mock_db_session):
         mock_request = MagicMock()
         mock_request.get.side_effect = lambda key: mock_request_data.get(key)
         
-        # Mock file object
         mock_file = MagicMock()
         mock_file.filename = 'test_photo.png'
-        mock_file.content_type = 'image/png'
-        mock_file.read.return_value = b'test_photo_data'
+        
+        # Mock the storage manager's upload_file to return a filename
+        mock_storage_instance = mock_storage_manager.return_value
+        mock_storage_instance.upload_file.return_value = f"https://example.com/{mobile_number}_photo.png"
 
+        # Test creating a new member with a photo
         mock_query = mock_db_session.query.return_value
         mock_filter = mock_query.filter_by.return_value
-        mock_filter.first.return_value = None # Member doesn't exist
+        mock_filter.first.return_value = None
 
         result = register_member(mock_session, mock_request, mock_file)
         assert result['status'] == 'success'
         
         mock_db_session.add.assert_called_once()
         added_member = mock_db_session.add.call_args[0][0]
-        
-        assert isinstance(added_member, Member)
-        expected_photo_string = "data:image/png;base64," + base64.b64encode(b'test_photo_data').decode('utf-8')
-        assert added_member.photo == expected_photo_string
-        
+        assert added_member.photo == f"https://example.com/{mobile_number}_photo.png"
         mock_db_session.commit.assert_called_once()
+
+@patch('fit_mafia.app_controller.ObjectStorageManager')
+@patch('fit_mafia.app_controller.db.session')
+def test_update_member_with_file_upload(mock_db_session, mock_storage_manager):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+        mock_request_data = {
+            'mobile_number': mobile_number,
+        }
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        
+        mock_file = MagicMock()
+        mock_file.filename = 'new_photo.png'
+        
+        mock_storage_instance = mock_storage_manager.return_value
+        mock_storage_instance.upload_file.return_value = f"https://example.com/new_photo.png"
+
+        mock_existing_member = Member(mobile_number=mobile_number, first_name='Jane', photo='old_photo.png')
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_existing_member
+        
+        result = update_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'success'
+        assert mock_existing_member.photo == f"https://example.com/new_photo.png"
+        mock_db_session.commit.assert_called_once()
+
 
 @patch('fit_mafia.app_controller.db.session')
 def test_register_member_unauthorized(mock_db_session):
@@ -396,15 +452,6 @@ def test_register_member_exception(mock_db_session, mock_logging):
         mock_session = {'role': 'admin'}
         mock_request_data = {
             'mobile_number': '1234567890',
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'dob': '2000-01-01',
-            'gender': 'Male',
-            'email': 'john.doe@example.com',
-            'address': '123 Main St',
-            'joining_date': '2023-01-01',
-            'captured_photo': 'data:image/png;base64,abc',
-            'password': 'password123'
         }
         mock_request = MagicMock()
         mock_request.get.side_effect = lambda key: mock_request_data.get(key)
@@ -418,6 +465,72 @@ def test_register_member_exception(mock_db_session, mock_logging):
         mock_db_session.add.side_effect = Exception("DB Add Error")
 
         result = register_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'error'
+        assert result['message'] == INTERNAL_SERVER_ERROR
+        mock_db_session.rollback.assert_called_once()
+        mock_logging.error.assert_called_once()
+
+@patch('fit_mafia.app_controller.ObjectStorageManager')
+def test_register_member_upload_error(mock_storage_manager):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mock_request_data = {'mobile_number': '1234567890'}
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = 'test.jpg'
+
+        mock_storage_instance = mock_storage_manager.return_value
+        mock_storage_instance.upload_file.return_value = "Error: Upload failed"
+
+        result = register_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'error'
+        assert "Error: Upload failed" in result['message']
+
+@patch('fit_mafia.app_controller.ObjectStorageManager')
+@patch('fit_mafia.app_controller.db.session')
+def test_update_member_upload_error(mock_db_session, mock_storage_manager):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+        mock_request_data = {'mobile_number': mobile_number}
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = 'test.jpg'
+
+        mock_storage_instance = mock_storage_manager.return_value
+        mock_storage_instance.upload_file.return_value = "Error: Upload failed"
+
+        mock_existing_member = Member(mobile_number=mobile_number)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_existing_member
+
+        result = update_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'error'
+        assert "Error: Upload failed" in result['message']
+
+@patch('fit_mafia.app_controller.logging')
+@patch('fit_mafia.app_controller.db.session')
+def test_update_member_exception(mock_db_session, mock_logging):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+        mock_request_data = {'mobile_number': mobile_number}
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = ''
+
+        mock_existing_member = Member(mobile_number=mobile_number)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_existing_member
+        
+        mock_db_session.commit.side_effect = Exception("DB Commit Error")
+
+        result = update_member(mock_session, mock_request, mock_file)
         assert result['status'] == 'error'
         assert result['message'] == INTERNAL_SERVER_ERROR
         mock_db_session.rollback.assert_called_once()

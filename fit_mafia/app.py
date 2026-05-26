@@ -109,11 +109,20 @@ def register_transaction():
 
 @app.route('/register_member', methods=['POST'])
 def register_member():
-    response=app_controller.register_member(session,request.files.to_dict(),request.files.get('photo'))
+    response=app_controller.register_member(session,request.form.to_dict(),request.files.get('photo'))
     if response['status']=='success':
         flash(response['message'], "success")
     else:
-        flash("Member registered successfully!", "error")
+        flash(response['message'], "error")
+    return redirect(url_for(HOME_PAGE))
+
+@app.route('/update_member', methods=['POST'])
+def update_member():
+    response=app_controller.update_member(session,request.form.to_dict(),request.files.get('photo'))
+    if response['status']=='success':
+        flash(response['message'], "success")
+    else:
+        flash(response['message'], "error")
     return redirect(url_for(HOME_PAGE))
 
 @app.route('/update_vitals', methods=['POST'])

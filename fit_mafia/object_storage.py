@@ -4,7 +4,7 @@ from oci.object_storage import ObjectStorageClient
 
 class ObjectStorageManager:
     def __init__(self):
-        self.CONFIG = oci.CONFIG.from_file(file_location=os.getenv("config"), profile_name="DEFAULT")
+        self.CONFIG = oci.config.from_file(file_location=os.getenv("config"), profile_name="DEFAULT")
         self.NAMESPACE = os.getenv("namespace")
         self.BUCKET_NAME = os.getenv("bucket_name")
         self.REGION = os.getenv("region")
@@ -19,7 +19,8 @@ class ObjectStorageManager:
                 put_object_body=file_storage.stream,
                 content_type=file_storage.content_type
             )
-            return "Upload successful."
+            return f"https://objectstorage.{self.REGION}.oraclecloud.com/n/{self.NAMESPACE}/b/{self.BUCKET_NAME}/o/{filename}"
+
         except Exception as e:
             return f"Error uploading to object storage: {e}"
 

@@ -178,6 +178,14 @@
             max-width: 600px;
             height: 200px;
         }
+        /* Flash messages container */
+        .flashes {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050; /* Ensure it's above most other content */
+            min-width: 250px;
+        }
     </style>
 </head>
 <body>
@@ -258,7 +266,6 @@
 
         <!-- Main Content -->
         <main class="col-12 col-md-10 content">
-            
             <!-- Top Navigation Bar with UserName -->
             <div class="top-navbar">
                 <div class="d-flex align-items-center">
@@ -731,6 +738,20 @@
         </main>
     </div>
 </div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -1307,6 +1328,7 @@
         if (!currentMemberData) return;
 
         // Populate the form with currentMemberData
+        document.getElementById('memberForm').action = '/update_member';
         document.getElementById('firstName').value = currentMemberData.first_name || '';
         document.getElementById('lastName').value = currentMemberData.last_name || '';
         document.getElementById('mobile_number').value = currentMemberData.mobile_number || '';
@@ -1353,6 +1375,7 @@
     function resetForm() {
         // Reset form fields
         document.getElementById('memberForm').reset();
+        document.getElementById('memberForm').action = '/register_member';
 
         // Remove readonly from mobile number
         document.getElementById('mobile_number').removeAttribute('readonly');
@@ -1446,6 +1469,14 @@
                 }
             }
         }
+
+        // Auto-close flash messages
+        const alerts = document.querySelectorAll('.alert-dismissible');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                new bootstrap.Alert(alert).close();
+            }, 5000); // 5 seconds
+        });
     });
 
 </script>

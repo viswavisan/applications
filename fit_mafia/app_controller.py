@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 from fit_mafia.constants import MEMBER_NOT_FOUND,INTERNAL_SERVER_ERROR
 from fit_mafia.db import db
 from fit_mafia.models import Member, Session, Transaction
+from fit_mafia.object_storage import ObjectStorageManager
 
 
 def login(username,password):
@@ -158,14 +159,14 @@ def register_member(session,request,file):
     if db.session.query(Member).filter_by(mobile_number=mobile_number).first():
         return {'status': 'failure', 'message': "mobile number already exists."}
 
-
-    photo = None
+    upload_result = None
     if file and file.filename != '':
-        photo_file = file
-        photo_bytes = file.read()
-        photo = "data:" + photo_file.content_type + ";base64," + base64.b64encode(photo_bytes).decode('utf-8')
-    elif request.get('captured_photo'):
-        photo = request.get('captured_photo')
+        storage_manager = ObjectStorageManager()
+        file_ext = file.filename.split('.')[-1]
+        filename = f"{mobile_number}_photo.{file_ext}"
+        upload_result = storage_manager.upload_file(file, filename)
+        if "Error" in upload_result:
+            return {'status': 'error', 'message': upload_result}
 
     try:
         new_member = Member(
@@ -177,7 +178,7 @@ def register_member(session,request,file):
             email=request.get('email'),
             address=request.get('address'),
             joining_date=request.get('joining_date') or datetime.date.today().isoformat(),
-            photo=photo,
+            photo=upload_result,
             password=request.get('password')
         )
         db.session.add(new_member)
@@ -186,7 +187,41 @@ def register_member(session,request,file):
 
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error registering/updating member: {e}")
+        logging.error(f"Error registering member: {e}")
+        return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
+
+
+def update_member(session, request, file):
+    role = session.get('role')
+    mobile_number = request.get('mobile_number')
+
+    member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
+    upload_result = None
+    if file and file.filename != '':
+        storage_manager = ObjectStorageManager()
+        file_ext = file.filename.split('.')[-1]
+        filename = f"{mobile_number}_photo.{file_ext}"
+        upload_result = storage_manager.upload_file(file, filename)
+        if "Error" in upload_result:
+            return {'status': 'error', 'message': upload_result}
+
+    try:
+        member.first_name = request.get('first_name')
+        member.last_name = request.get('last_name')
+        member.dob = request.get('dob')
+        member.gender = request.get('gender')
+        member.email = request.get('email')
+        member.address = request.get('address')
+        member.joining_date = request.get('joining_date') or member.joining_date
+        if upload_result:
+            member.photo = upload_result
+
+        db.session.commit()
+        return {'status': 'success', 'message': 'Member updated successfully.'}
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error updating member for mobile number {mobile_number}: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 

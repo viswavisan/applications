@@ -22,9 +22,4 @@ swagger.register_blueprint(interview_blueprint)
 
 
 if __name__ == "__main__":
-    main_app.run(host='127.0.0.1', port=5000, debug=True)
-    #workslocal http 5000 --name visan
-    # sudo
-    # firewall - cmd - -permanent - -add - service = http
-    # sudo
-    # firewall - cmd - -reload
+    main_app.run(host='127.0.0.1', port=5000)
