@@ -9,15 +9,18 @@ from fit_mafia.constants import HOME_PAGE, PUBLIC_PAGE, LOGIN_PAGE, PUBLIC_TEMPL
 from fit_mafia.schemas import MemberSchema,LoginRequestSchema
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
+static_dir = os.path.join(os.path.dirname(__file__), "static")
 
 
 app = Blueprint('fit_mafia', __name__, template_folder=template_dir,
+                static_folder=static_dir,
+                static_url_path="/fit_mafia/static",
                 description="Operations for the Fit Mafia application")
 
 @app.before_request
 def require_auth():
     """Check authentication before every request in this Blueprint except public endpoints."""
-    public_endpoints = [PUBLIC_PAGE, LOGIN_PAGE]
+    public_endpoints = [PUBLIC_PAGE, LOGIN_PAGE, 'fit_mafia.favicon']
 
     if request.endpoint and (request.endpoint.startswith('static') or request.endpoint in public_endpoints):
         return None

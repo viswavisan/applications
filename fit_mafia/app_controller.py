@@ -153,6 +153,9 @@ def register_member(session,request,file):
     role = session.get('role')
     mobile_number = request.get('mobile_number')
 
+    if not (mobile_number and len(mobile_number) == 10 and mobile_number.isdigit()):
+        return {'status': 'failure', 'message': 'Mobile number must be 10 digits.'}
+
     if role != 'admin' and (role != 'member' or session.get('username') != mobile_number):
         return {'status': 'failure', 'message': 'Unauthorized'}
 
@@ -194,6 +197,9 @@ def register_member(session,request,file):
 def update_member(session, request, file):
     role = session.get('role')
     mobile_number = request.get('mobile_number')
+
+    if not (mobile_number and len(mobile_number) == 10 and mobile_number.isdigit()):
+        return {'status': 'failure', 'message': 'Mobile number must be 10 digits.'}
 
     member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
     upload_result = None

@@ -1,0 +1,175 @@
+html {
+    overflow-y: scroll;
+}
+body {
+    background-color: #f8f9fa;
+    /* Gym related background image */
+    background-image: linear-gradient(rgba(248, 249, 250, 0.9), rgba(248, 249, 250, 0.9)), url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+}
+.sidebar {
+    height: 100vh;
+    background-color: #343a40;
+    color: #fff;
+    padding-top: 20px;
+    position: fixed;
+    overflow-y: auto;
+}
+.sidebar-btn {
+    background: none;
+    border: none;
+    color: #adb5bd;
+    text-align: left;
+    width: 100%;
+    display: block;
+    padding: 10px 20px;
+    margin-bottom: 5px;
+}
+.sidebar-btn:hover, .sidebar-btn.active {
+    background-color: #495057;
+    color: #fff;
+}
+.content {
+    padding: 20px;
+    margin-left: 16.666667%; /* Offset for col-md-2 sidebar */
+}
+/* Adjust for smaller screens where sidebar is hidden */
+@media (max-width: 767.98px) {
+    .content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+.section {
+    display: none;
+}
+.section.active {
+    display: block;
+}
+/* Thumbnail styles */
+.member-thumbnail {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.view-photo {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+/* Loading Overlay styles */
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Top Navigation Bar */
+.top-navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,.08);
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
+.clickable-card {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.clickable-card:hover {
+    transform: scale(1.02);
+    opacity: 0.9;
+}
+
+/* Camera overlay styles */
+#cameraOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+#cameraVideo {
+    max-width: 100%;
+    max-height: 70vh;
+    background: #000;
+    border: 2px solid #fff;
+    border-radius: 8px;
+}
+.camera-controls {
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+}
+#photoPreview {
+    max-width: 150px;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+    border: 1px solid #ccc;
+}
+
+/* Signature Canvas */
+#signatureCanvas {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: crosshair;
+    touch-action: none;
+    width: 100%;
+    max-width: 600px;
+    height: 200px;
+}
+/* Flash messages container */
+.flashes {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050; /* Ensure it's above most other content */
+    min-width: 250px;
+}
