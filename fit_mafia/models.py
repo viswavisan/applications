@@ -1,41 +1,42 @@
-from sqlalchemy import Column, String
+from dotenv import load_dotenv
+load_dotenv()
+from sqlalchemy import Column, String, case
 from sqlalchemy.orm import class_mapper
 import datetime
-from sqlalchemy import case
 from sqlalchemy.ext.hybrid import hybrid_property
-from fit_mafia.db import Base, db
+from fit_mafia.db import Base , db
 import os
 
 db_url = os.getenv("DATABASE_URL", "")
-SCHEMA_NAME = None if "sqlite" in db_url else 'fitmafia'
+SCHEMA_NAME = 'fitmafia' if "postgres" in db_url else None
 
 class Session(Base):
-    __tablename__ = 'session'
+    __tablename__ = 'user_session'
     __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
-    session_id = Column(String, primary_key=True)
-    start_time = Column(String, nullable=True)
-    end_time = Column(String, nullable=True)
-    user_name = Column(String, nullable=True)
+    session_id = Column(String(50), primary_key=True)
+    start_time = Column(String(50), nullable=True)
+    end_time = Column(String(50), nullable=True)
+    user_name = Column(String(50), nullable=True)
 
 class Member(Base):
     __tablename__ = 'member'
     __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
-    mobile_number = Column(String, primary_key=True)
-    first_name = Column(String, nullable=True)
-    last_name = Column(String, nullable=True)
-    dob = Column(String, nullable=True)
-    gender = Column(String, nullable=True)
-    email = Column(String, nullable=True)
-    address = Column(String, nullable=True)
-    height = Column(String, nullable=True)
-    weight = Column(String, nullable=True)
-    bmi = Column(String, nullable=True)
-    subscription = Column(String, nullable=True)
-    joining_date = Column(String, nullable=True)
-    subscription_start_date = Column(String, nullable=True)
-    subscription_end_date = Column(String, nullable=True)
-    photo = Column(String, nullable=True)
-    password = Column(String, nullable=True)
+    mobile_number = Column(String(10), primary_key=True)
+    first_name = Column(String(50), nullable=True)
+    last_name = Column(String(50), nullable=True)
+    dob = Column(String(50), nullable=True)
+    gender = Column(String(50), nullable=True)
+    email = Column(String(50), nullable=True)
+    address = Column(String(100), nullable=True)
+    height = Column(String(10), nullable=True)
+    weight = Column(String(10), nullable=True)
+    bmi = Column(String(10), nullable=True)
+    subscription = Column(String(50), nullable=True)
+    joining_date = Column(String(50), nullable=True)
+    subscription_start_date = Column(String(50), nullable=True)
+    subscription_end_date = Column(String(50), nullable=True)
+    photo = Column(String(225), nullable=True)
+    password = Column(String(50), nullable=True)
 
     @hybrid_property
     def status(self):
@@ -69,14 +70,14 @@ class Member(Base):
 class Transaction(Base):
     __tablename__ = 'transaction'
     __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
-    transaction_id = Column(String, primary_key=True)
-    member_name = Column(String, nullable=True)
-    mobile_number = Column(String, nullable=True)
-    date = Column(String, nullable=True)
-    amount = Column(String, nullable=True)
-    discount = Column(String, nullable=True)
-    payment_method = Column(String, nullable=True)
-    status = Column(String, nullable=True)
+    transaction_id = Column(String(50), primary_key=True)
+    member_name = Column(String(50), nullable=True)
+    mobile_number = Column(String(10), nullable=True)
+    date = Column(String(50), nullable=True)
+    amount = Column(String(50), nullable=True)
+    discount = Column(String(50), nullable=True)
+    payment_method = Column(String(50), nullable=True)
+    status = Column(String(50), nullable=True)
 
 # Remove this so it does not auto-initialize tables dynamically on import, which conflicts with Alembic
 # db.init_db()
