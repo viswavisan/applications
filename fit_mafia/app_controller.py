@@ -1,4 +1,3 @@
-import base64
 import datetime
 import logging
 import uuid
@@ -194,8 +193,7 @@ def register_member(session,request,file):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-def update_member(session, request, file):
-    role = session.get('role')
+def update_member(_, request, file):
     mobile_number = request.get('mobile_number')
 
     if not (mobile_number and len(mobile_number) == 10 and mobile_number.isdigit()):

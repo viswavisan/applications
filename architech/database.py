@@ -6,8 +6,8 @@ class sql_query:
         self.password=''
         self.port='0'
         self.db='test_db'
-                
-        
+
+
     def connect(self):
         try:return pymysql.connect(host=self.host,user=self.user,password=self.password,port=int(self.port),db=self.db,charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor)
         except Exception: return 'connectivity error'
@@ -25,7 +25,7 @@ class sql_query:
         x=cursor.execute(f"INSERT ignore INTO {table}  ({keys}) VALUES {values}");sql.commit();sql.close()
         return x
     def update(self,table,d,where):
-        sql=self.connect() 
+        sql=self.connect()
         cursor=  sql.cursor()
         fields=",".join([f"{k}='{v or ''}'" for k,v in d.items()])
         x=cursor.execute(f"UPDATE {table}  SET {fields} {where}")

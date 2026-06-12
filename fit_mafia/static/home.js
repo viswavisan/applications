@@ -2,101 +2,53 @@
 let currentMemberData = null;
 const { currentUserRole, currentUserName, currentMember } = window.APP_CONFIG;
 
-// --- Signature Pad Logic ---
-const sigCanvas = document.getElementById('signatureCanvas');
-const sigCtx = sigCanvas ? sigCanvas.getContext('2d') : null;
-let isDrawing = false;
-let signatureEmpty = true;
-
-// Setup Canvas for High DPI screens and set fixed size bounds
-function resizeCanvas() {
-    if (!sigCanvas) return;
-    const ratio =  Math.max(window.devicePixelRatio || 1, 1);
-    const rect = sigCanvas.parentElement.getBoundingClientRect();
-
-    // Make canvas take up to 600px width, but respond to smaller screens
-    const width = Math.min(600, rect.width);
-    const height = 200;
-
-    sigCanvas.width = width * ratio;
-    sigCanvas.height = height * ratio;
-    sigCtx.scale(ratio, ratio);
-
-    // This clears the canvas on resize. If we wanted to keep the signature, we'd need to save/restore the image data.
-    clearSignature();
-}
-window.addEventListener("resize", resizeCanvas);
-// Initial call will happen when the form is displayed
-
-function startDrawing(e) {
-    if (!sigCanvas) return;
-    isDrawing = true;
-    signatureEmpty = false;
-    draw(e);
+// --- Helper function for cache busting ---
+function addCacheBuster(url) {
+    if (!url) return '';
+    const timestamp = new Date().getTime();
+    // Check if URL already has query parameters
+    if (url.includes('?')) {
+        return `${url}&_=${timestamp}`;
+    } else {
+        return `${url}?_=${timestamp}`;
+    }
 }
 
-function stopDrawing() {
-    if (!sigCanvas) return;
-    isDrawing = false;
-    sigCtx.beginPath();
+// Status options for showFlashMessage: 'success', 'danger', 'warning', 'info', 'primary', 'secondary'
+function showFlashMessage(message, status = 'danger') {
+    const flashesContainer = document.querySelector('.flashes');
+    if (!flashesContainer) return;
+
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${status} alert-dismissible fade show`;
+    alert.setAttribute('role', 'alert');
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    flashesContainer.appendChild(alert);
+
+    setTimeout(() => {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+        if (bsAlert) {
+            bsAlert.close();
+        }
+    }, 5000);
 }
 
-function draw(e) {
-    if (!isDrawing || !sigCanvas) return;
-
-    // Handle both mouse and touch events
-    let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-
-    if(!clientX || !clientY) return;
-
-    const rect = sigCanvas.getBoundingClientRect();
-    const scaleX = sigCanvas.width / rect.width;
-    const scaleY = sigCanvas.height / rect.height;
-
-    const x = (clientX - rect.left);
-    const y = (clientY - rect.top);
-
-    sigCtx.lineWidth = 2;
-    sigCtx.lineCap = 'round';
-    sigCtx.strokeStyle = '#000';
-
-    sigCtx.lineTo(x, y);
-    sigCtx.stroke();
-    sigCtx.beginPath();
-    sigCtx.moveTo(x, y);
-    e.preventDefault(); // prevent scrolling while drawing
+function autoCloseFlashes() {
+    const alerts = document.querySelectorAll('.flashes .alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+            if (bsAlert) {
+                bsAlert.close();
+            }
+        }, 5000);
+    });
 }
 
-if (sigCanvas) {
-    sigCanvas.addEventListener('mousedown', startDrawing);
-    sigCanvas.addEventListener('mousemove', draw);
-    sigCanvas.addEventListener('mouseup', stopDrawing);
-    sigCanvas.addEventListener('mouseout', stopDrawing);
 
-    sigCanvas.addEventListener('touchstart', startDrawing, {passive: false});
-    sigCanvas.addEventListener('touchmove', draw, {passive: false});
-    sigCanvas.addEventListener('touchend', stopDrawing);
-}
-
-function clearSignature() {
-    if (!sigCanvas) return;
-    // Use transform matrix to clear everything correctly
-    sigCtx.save();
-    sigCtx.setTransform(1, 0, 0, 1, 0, 0);
-    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-    sigCtx.restore();
-    signatureEmpty = true;
-}
-
-function prepareSignature() {
-    // We no longer require saving signature data, so this does nothing to the form
-    return true;
-}
-// --- End Signature Pad Logic ---
-
-// --- Camera capture logic ---
-let cameraStream = null;
 
 const openCameraBtn = document.getElementById('openCameraBtn');
 if (openCameraBtn) {
@@ -110,7 +62,7 @@ if (openCameraBtn) {
             overlay.classList.remove('d-none');
         } catch (err) {
             console.error("Error accessing camera:", err);
-            alert("Could not access camera. Please ensure permissions are granted.");
+            showFlashMessage("Could not access camera. Please ensure permissions are granted.", "warning");
         }
     });
 }
@@ -161,7 +113,7 @@ if (photoInput) {
             const maxSize = 1 * 1024 * 1024; // 1 MB
 
             if (file.size > maxSize) {
-                alert('The selected file is too large. Please choose a file smaller than 1 MB.');
+                showFlashMessage('The selected file is too large. Please choose a file smaller than 1 MB.', 'warning');
                 e.target.value = ''; // Clear the file input
                 const preview = document.getElementById('photoPreview');
                 preview.src = '';
@@ -259,8 +211,6 @@ function showSection(sectionId, event) {
     if (sectionId === 'register' && mobileNumField && !mobileNumField.hasAttribute('readonly')) {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('joining_date').value = today;
-        // Resize canvas when showing the section so it draws correctly
-        setTimeout(resizeCanvas, 100);
     }
 }
 
@@ -444,7 +394,7 @@ function populateMemberView(data) {
     const photoEl = document.getElementById('viewPhoto');
     const noPhotoEl = document.getElementById('noPhoto');
     if (data.photo) {
-        photoEl.src = data.photo;
+        photoEl.src = addCacheBuster(data.photo); // Apply cache busting
         photoEl.classList.remove('d-none');
         noPhotoEl.classList.add('d-none');
     } else {
@@ -469,7 +419,7 @@ async function viewMember(mobileNumber) {
     try {
         const response = await fetch(`/api/member/${mobileNumber}`);
         if (!response.ok) {
-            alert('Member not found');
+            showFlashMessage('Member not found', 'danger');
             return;
         }
         const data = await response.json();
@@ -477,7 +427,7 @@ async function viewMember(mobileNumber) {
         showSection('viewMemberDetails');
     } catch (error) {
         console.error('Error fetching member details:', error);
-        alert('Error loading member details.');
+        showFlashMessage('Error loading member details.', 'danger');
     } finally {
         hideLoading();
     }
@@ -519,14 +469,14 @@ async function updateVitals(event) {
         });
 
         if (response.ok) {
-            alert('Vitals updated successfully!');
+            showFlashMessage('Vitals updated successfully!', 'success');
             viewMember(mobileNumber); // Reload to get updated data
         } else {
-            alert('Failed to update vitals.');
+            showFlashMessage('Failed to update vitals.', 'danger');
         }
     } catch (error) {
         console.error('Error updating vitals:', error);
-        alert('An error occurred while updating vitals.');
+        showFlashMessage('An error occurred while updating vitals.', 'danger');
     } finally {
         hideLoading();
     }
@@ -561,16 +511,16 @@ async function renewSubscription(event) {
         });
 
         if (response.ok) {
-            alert('Subscription renewed successfully! A new transaction has been recorded.');
+            showFlashMessage('Subscription renewed successfully! A new transaction has been recorded.', 'success');
             viewMember(mobileNumber); // Reload to get updated data
             // Also trigger a background reload of transactions just in case the user switches tabs
             fetch('/fitmafia').then(() => {});
         } else {
-            alert('Failed to renew subscription.');
+            showFlashMessage('Failed to renew subscription.', 'danger');
         }
     } catch (error) {
         console.error('Error renewing subscription:', error);
-        alert('An error occurred while renewing subscription.');
+        showFlashMessage('An error occurred while renewing subscription.', 'danger');
     } finally {
         hideLoading();
     }
@@ -603,12 +553,11 @@ function editMember() {
     // If editing, hide the terms block since they've already accepted
     document.getElementById('termsContainer').style.display = 'none';
     document.getElementById('termsAccepted').removeAttribute('required');
-    document.getElementById('signatureContainer').style.display = 'none';
 
     // Handle Photo Preview when editing
     const preview = document.getElementById('photoPreview');
     if (currentMemberData.photo) {
-        preview.src = currentMemberData.photo;
+        preview.src = addCacheBuster(currentMemberData.photo); // Apply cache busting
         preview.style.display = 'block';
     } else {
         preview.style.display = 'none';
@@ -644,8 +593,6 @@ function resetForm() {
     // Show terms block for new registrations
     document.getElementById('termsContainer').style.display = 'block';
     document.getElementById('termsAccepted').setAttribute('required', 'true');
-    document.getElementById('signatureContainer').style.display = 'block';
-    clearSignature();
 
     // Hide preview and clear hidden input
     document.getElementById('photoPreview').style.display = 'none';
@@ -685,48 +632,112 @@ function viewMemberTransactions() {
     filterTransactions();
 }
 
-// Set today's date when the page loads if we start on the register page
-document.addEventListener('DOMContentLoaded', () => {
-    // Password visibility toggle
-    const togglePassword = document.getElementById('togglePassword');
-    if (togglePassword) {
-        togglePassword.addEventListener('click', function() {
-            const password = document.getElementById('password');
-            const icon = this.querySelector('i');
-            // Toggle the type attribute
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            // Toggle the icon
-            icon.classList.toggle('bi-eye');
-            icon.classList.toggle('bi-eye-slash');
-        });
-    }
-
-    // Handle initial view based on role
-    if (currentUserRole === 'member' && currentUserName) {
-        if (currentMember) {
-            populateMemberView(currentMember);
-        } else {
-            viewMember(currentUserName);
-        }
-        // Pre-filter transactions for the current member
-        filterTransactions();
+function validateAndHighlight(field, condition) {
+    if (condition) {
+        field.classList.remove('is-invalid');
+        return true;
     } else {
+        field.classList.add('is-invalid');
+        return false;
+    }
+}
+
+async function handleMemberFormSubmit(event) {
+    event.preventDefault();
+
+    const memberForm = document.getElementById('memberForm');
+    const url = memberForm.action;
+    let isValid = true;
+
+    // --- Validation for new member registration ---
+    if (url.endsWith('register_member')) {
+        const firstNameField = document.getElementById('firstName');
+        const lastNameField = document.getElementById('lastName');
+        const mobileNumberField = document.getElementById('mobile_number');
+        const passwordField = document.getElementById('password');
+        const genderField = document.getElementById('gender');
+        const dobField = document.getElementById('dob');
+        const termsAcceptedField = document.getElementById('termsAccepted');
+
+        isValid &= validateAndHighlight(firstNameField, firstNameField.value.trim() !== '');
+        isValid &= validateAndHighlight(lastNameField, lastNameField.value.trim() !== '');
+        isValid &= validateAndHighlight(mobileNumberField, /^\d{10}$/.test(mobileNumberField.value));
+        isValid &= validateAndHighlight(passwordField, passwordField.value.length >= 4);
+        isValid &= validateAndHighlight(genderField, genderField.value !== '');
+        isValid &= validateAndHighlight(dobField, dobField.value !== '');
+        if (termsAcceptedField && termsAcceptedField.hasAttribute('required')) {
+            isValid &= validateAndHighlight(termsAcceptedField, termsAcceptedField.checked);
+        }
+
+        if (!isValid) {
+            showFlashMessage('fill in all required fields', 'danger');
+            return;
+        }
+    }
+    // --- End of validation ---
+
+    const formData = new FormData(memberForm);
+    showLoading();
+
+    try {
+        const response = await fetch(url, { method: 'POST', body: formData });
+        const result = await response.json();
+        if (result.redirect) {
+            window.location.href = result.redirect;
+            return;
+        }
+
+        showFlashMessage(result.message, result.status);
+
+        if (result.status === 'success') {
+            if (url.endsWith('register_member')) {
+                const mobileNumber = formData.get('mobile_number');
+                viewMember(mobileNumber);
+                resetForm();
+            } else {
+                const mobileNumber = formData.get('mobile_number');
+                viewMember(mobileNumber);
+            }
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        showFlashMessage('An error occurred. Please try again.', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+function togglePasswordVisibility() {
+    const password = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePassword');
+    if (!password || !toggleBtn) return;
+    const icon = toggleBtn.querySelector('i');
+    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+    password.setAttribute('type', type);
+    icon.classList.toggle('bi-eye');
+    icon.classList.toggle('bi-eye-slash');
+}
+
+//on load function
+document.addEventListener('DOMContentLoaded', () => {
+    const togglePassword = document.getElementById('togglePassword');
+    if (togglePassword) {togglePassword.addEventListener('click', togglePasswordVisibility);}
+
+    if (currentUserRole === 'member' && currentUserName) {
+        if (currentMember) { populateMemberView(currentMember); }
+        else { viewMember(currentUserName); }
+        filterTransactions();}
+
+    else {
         const currentActive = document.querySelector('.section.active');
         if (currentActive && currentActive.id === 'register') {
             const joiningDateField = document.getElementById('joining_date');
             if (joiningDateField) {
                 const today = new Date().toISOString().split('T')[0];
                 joiningDateField.value = today;
-            }
-        }
-    }
+            } } }
 
-    // Auto-close flash messages
-    const alerts = document.querySelectorAll('.alert-dismissible');
-    alerts.forEach(alert => {
-        setTimeout(() => {
-            new bootstrap.Alert(alert).close();
-        }, 5000); // 5 seconds
-    });
+    document.getElementById('submitBtn').addEventListener('click', handleMemberFormSubmit);
+    autoCloseFlashes();
 });

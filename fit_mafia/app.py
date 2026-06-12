@@ -12,7 +12,8 @@ template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'template
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 
 
-app = Blueprint('fit_mafia', __name__, template_folder=template_dir,
+app = Blueprint('fit_mafia', __name__,
+                template_folder=template_dir,
                 static_folder=static_dir,
                 static_url_path="/fit_mafia/static",
                 description="Operations for the Fit Mafia application")
@@ -20,9 +21,9 @@ app = Blueprint('fit_mafia', __name__, template_folder=template_dir,
 @app.before_request
 def require_auth():
     """Check authentication before every request in this Blueprint except public endpoints."""
-    public_endpoints = [PUBLIC_PAGE, LOGIN_PAGE, 'fit_mafia.favicon']
+    public_endpoints = [PUBLIC_PAGE, LOGIN_PAGE]
 
-    if request.endpoint and (request.endpoint.startswith('static') or request.endpoint in public_endpoints):
+    if request.endpoint and (request.endpoint == 'fit_mafia.static' or request.endpoint in public_endpoints):
         return None
 
     if 'logged_in' not in session or not session['logged_in']:
@@ -94,6 +95,7 @@ def login(args):
         
         if response['status'] == 'success':
             session.update(response['session_data'])
+            flash("Logged in successfully!", "success")
             return redirect(url_for(HOME_PAGE))
         else:
             flash(response['message'], "error")
@@ -112,21 +114,13 @@ def register_transaction():
 
 @app.route('/register_member', methods=['POST'])
 def register_member():
-    response=app_controller.register_member(session,request.form.to_dict(),request.files.get('photo'))
-    if response['status']=='success':
-        flash(response['message'], "success")
-    else:
-        flash(response['message'], "error")
-    return redirect(url_for(HOME_PAGE))
+    response = app_controller.register_member(session, request.form.to_dict(), request.files.get('photo'))
+    return jsonify({'status': response['status'], 'message': response['message']}), 200
 
 @app.route('/update_member', methods=['POST'])
 def update_member():
-    response=app_controller.update_member(session,request.form.to_dict(),request.files.get('photo'))
-    if response['status']=='success':
-        flash(response['message'], "success")
-    else:
-        flash(response['message'], "error")
-    return redirect(url_for(HOME_PAGE))
+    response = app_controller.update_member(session, request.form.to_dict(), request.files.get('photo'))
+    return jsonify({'status': response['status'], 'message': response['message']}), 200
 
 @app.route('/update_vitals', methods=['POST'])
 def update_vitals():

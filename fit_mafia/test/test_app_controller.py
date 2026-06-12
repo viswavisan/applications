@@ -398,7 +398,7 @@ def test_update_member_with_file_upload(mock_db_session, mock_storage_manager):
         mock_file.filename = 'new_photo.png'
         
         mock_storage_instance = mock_storage_manager.return_value
-        mock_storage_instance.upload_file.return_value = f"https://example.com/new_photo.png"
+        mock_storage_instance.upload_file.return_value = "https://example.com/new_photo.png"
 
         mock_existing_member = Member(mobile_number=mobile_number, first_name='Jane', photo='old_photo.png')
         mock_query = mock_db_session.query.return_value
@@ -407,7 +407,7 @@ def test_update_member_with_file_upload(mock_db_session, mock_storage_manager):
         
         result = update_member(mock_session, mock_request, mock_file)
         assert result['status'] == 'success'
-        assert mock_existing_member.photo == f"https://example.com/new_photo.png"
+        assert mock_existing_member.photo == "https://example.com/new_photo.png"
         mock_db_session.commit.assert_called_once()
 
 

@@ -54,4 +54,4 @@ class MigrationManager:
 if __name__ == "__main__":
     manager = MigrationManager()
     manager.create_revision("")
-    # manager.upgrade()
+    manager.upgrade()
