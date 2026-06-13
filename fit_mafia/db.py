@@ -137,7 +137,7 @@ class Database:
         except Exception as e:
             return f"Error running SQL command: {e}"
 
-db = Database(os.getenv("PG_DATABASE_URL"))
+db = Database(os.getenv("DATABASE_URL"))
 
 
 def migrate_data(source_db_url, dest_db_url, tables=None):
