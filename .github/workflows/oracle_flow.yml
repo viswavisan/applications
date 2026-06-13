@@ -28,7 +28,7 @@ jobs:
         run: |
           pytest --cov=fit_mafia --cov-report=xml:coverage.xml
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.PG_DATABASE_URL }}
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
