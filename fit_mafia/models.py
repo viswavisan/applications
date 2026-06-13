@@ -79,5 +79,7 @@ class Transaction(Base):
     payment_method = Column(String(50), nullable=True)
     status = Column(String(50), nullable=True)
 
-# Remove this so it does not auto-initialize tables dynamically on import, which conflicts with Alembic
+
 # db.init_db()
+# statements=db.get_sql_schema_diffs()
+# print(db.run_sql(statements))
