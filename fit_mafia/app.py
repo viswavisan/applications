@@ -21,9 +21,13 @@ app = Blueprint('fit_mafia', __name__,
 @app.before_request
 def require_auth():
     """Check authentication before every request in this Blueprint except public endpoints."""
+    # Guard clause: Only run auth logic for requests that belong to the 'fit_mafia' blueprint.
+    if not request.endpoint or not request.endpoint.startswith('fit_mafia.'):
+        return
+
     public_endpoints = [PUBLIC_PAGE, LOGIN_PAGE]
 
-    if request.endpoint and (request.endpoint == 'fit_mafia.static' or request.endpoint in public_endpoints):
+    if request.endpoint in public_endpoints or request.endpoint == 'fit_mafia.static':
         return None
 
     if 'logged_in' not in session or not session['logged_in']:

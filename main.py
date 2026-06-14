@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# from Interview_evaluation.app import app as interview_blueprint
+from Interview_evaluation.app import app as interview_blueprint
 from fit_mafia.app import app as fit_mafia_blueprint
 from health_check import app as health_blueprint
 from swagger import configure_swagger
@@ -18,7 +18,7 @@ main_app.permanent_session_lifetime = timedelta(minutes=30)
 swagger=configure_swagger(main_app)
 swagger.register_blueprint(fit_mafia_blueprint)
 swagger.register_blueprint(health_blueprint)
-# swagger.register_blueprint(interview_blueprint)
+swagger.register_blueprint(interview_blueprint, url_prefix='/evaluation')
 
 
 if __name__ == "__main__":

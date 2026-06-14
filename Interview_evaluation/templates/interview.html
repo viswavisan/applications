@@ -257,7 +257,7 @@
             outputElement.classList.remove('error');
 
             try {
-                const response = await fetch('/run', {
+                const response = await fetch("{{ url_for('Evaluation.run_code') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

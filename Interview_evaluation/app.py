@@ -6,8 +6,12 @@ from datetime import datetime
 import io
 import sys
 import traceback # Import traceback to get more detailed error info
+from flask_smorest import Blueprint
 
-app = Flask(__name__)
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
+app = Blueprint('Evaluation', __name__,
+                template_folder=template_dir,
+                description="Operations for the Interview Evaluation application")
 app.secret_key = 'your_secret_key'  # Needed for session management
 
 # Path to the answers file
@@ -52,13 +56,13 @@ def start_interview():
     session['candidate_name'] = request.form['candidate_name']
     session['question_index'] = 0
     session['answers'] = {}
-    return redirect(url_for('interview'))
+    return redirect(url_for('.interview'))
 
 @app.route('/interview', methods=['GET', 'POST'])
 def interview():
     # Protect against direct access
     if 'candidate_name' not in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('.index'))
 
     if request.method == 'POST':
         # Store current answer before navigating
@@ -76,15 +80,15 @@ def interview():
 
         # Redirect to thank_you page if finished
         if session['question_index'] >= len(QUESTIONS):
-            return redirect(url_for('thank_you'))
+            return redirect(url_for('.thank_you'))
         
-        return redirect(url_for('interview'))
+        return redirect(url_for('.interview'))
 
     question_index = session.get('question_index', 0)
     
     # Ensure index is valid
     if not 0 <= question_index < len(QUESTIONS):
-        return redirect(url_for('thank_you'))
+        return redirect(url_for('.thank_you'))
 
     question = QUESTIONS[question_index]
     
@@ -127,7 +131,7 @@ def run_code():
 @app.route('/thank_you')
 def thank_you():
     if 'candidate_name' not in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('.index'))
 
     # Load existing submissions
     if os.path.exists(ANSWERS_FILE):
