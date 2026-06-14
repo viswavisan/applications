@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, case
 from sqlalchemy.orm import class_mapper
 import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
-from fit_mafia.db import Base , db
+from db import Base
 import os
 
 db_url = os.getenv("DATABASE_URL", "")
