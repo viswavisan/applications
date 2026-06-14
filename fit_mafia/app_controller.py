@@ -5,8 +5,7 @@ import uuid
 from dateutil.relativedelta import relativedelta
 
 from fit_mafia.constants import MEMBER_NOT_FOUND,INTERNAL_SERVER_ERROR
-from db import db
-from fit_mafia.models import Member, Session, Transaction
+from fit_mafia.models import Member, Session, Transaction, db
 from object_storage import ObjectStorageManager
 
 

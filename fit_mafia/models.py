@@ -4,9 +4,10 @@ from sqlalchemy import Column, String, case
 from sqlalchemy.orm import class_mapper
 import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
-from db import Base
+from database import Base, Database
 import os
 
+db = Database(os.getenv("DATABASE_URL"))
 db_url = os.getenv("DATABASE_URL", "")
 SCHEMA_NAME = 'fitmafia' if "postgres" in db_url else None
 

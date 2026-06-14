@@ -19,7 +19,7 @@ def configure_swagger(app):
 
 def configure_error_handlers(app):
     @app.errorhandler(404)
-    def page_not_found(e):
+    def page_not_found(_):
         # Modern APIs typically return JSON instead of HTML
         # But we can smartly return JSON for API calls and HTML for browser visits
         

@@ -1,100 +1,181 @@
+
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import json
-import sys
-import io
 import os
-from flask import Flask, render_template, Blueprint, request
-from flask_smorest import Blueprint
-try:
-    from .models import db, Answer
-    from .questions import questions
-    from .schemas import AnswerSchema
-except ImportError:
-    from models import db, Answer
-    from questions import questions
-    from schemas import AnswerSchema
+from datetime import datetime
+import io
+import sys
+import traceback # Import traceback to get more detailed error info
 
-template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
-app = Blueprint('Evaluation', __name__, template_folder=template_dir)
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Needed for session management
 
+# Path to the answers file
+ANSWERS_FILE = 'answers.json'
+
+# Python-related questions
+QUESTIONS = [
+    {
+        "question": "Write a Python function to find the second largest number in a list.",
+        "expected_output": "Example: `second_largest([10, 20, 4, 45, 99])` should return `45`."
+    },
+    {
+        "question": "Write a Python program to reverse a string without using any built-in string reversal functions.",
+        "expected_output": "Example: Reversing `'hello'` should result in `'olleh'`."
+    },
+    {
+        "question": "Given a list of integers, write a function that returns a new list with all the duplicates removed.",
+        "expected_output": "Example: For `[1, 2, 2, 3, 4, 4, 5]`, the output should be `[1, 2, 3, 4, 5]`."
+    },
+    {
+        "question": "Write a Python function `is_palindrome` that checks if a given string is a palindrome.",
+        "expected_output": "Example: `is_palindrome('racecar')` should return `True`."
+    },
+    {
+        "question": "Write a Python program to count the frequency of each character in a given string and return it as a dictionary.",
+        "expected_output": "Example: For `'hello'`, the output should be `{'h': 1, 'e': 1, 'l': 2, 'o': 1}`."
+    },
+    {
+        "question": "Basic: Write code to split odd and even numbers from the range 1 to 10.",
+        "expected_output": "Expected output: `([2, 4, 6, 8, 10], [1, 3, 5, 7, 9])`"
+    }
+]
+
+@app.route('/')
+def index():
+    # Clear session to start fresh
+    session.clear()
+    return render_template('index.html')
+
+@app.route('/start', methods=['POST'])
+def start_interview():
+    session['candidate_name'] = request.form['candidate_name']
+    session['question_index'] = 0
+    session['answers'] = {}
+    return redirect(url_for('interview'))
+
+@app.route('/interview', methods=['GET', 'POST'])
+def interview():
+    # Protect against direct access
+    if 'candidate_name' not in session:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        # Store current answer before navigating
+        answer = request.form.get('answer')
+        question_index = session['question_index']
+        answers = session.get('answers', {})
+        answers[str(question_index)] = answer
+        session['answers'] = answers
+
+        # Handle navigation
+        if 'back' in request.form:
+            session['question_index'] -= 1
+        elif 'next' in request.form:
+            session['question_index'] += 1
+
+        # Redirect to thank_you page if finished
+        if session['question_index'] >= len(QUESTIONS):
+            return redirect(url_for('thank_you'))
+        
+        return redirect(url_for('interview'))
+
+    question_index = session.get('question_index', 0)
+    
+    # Ensure index is valid
+    if not 0 <= question_index < len(QUESTIONS):
+        return redirect(url_for('thank_you'))
+
+    question = QUESTIONS[question_index]
+    
+    # Get existing answer if available
+    answers = session.get('answers', {})
+    existing_answer = answers.get(str(question_index), '')
+
+    progress = ((question_index + 1) / len(QUESTIONS)) * 100
+    
+    return render_template(
+        'interview.html', 
+        question=question, 
+        existing_answer=existing_answer,
+        progress=progress,
+        is_first_question=(question_index == 0),
+        is_last_question=(question_index == len(QUESTIONS) - 1),
+        candidate_name=session.get('candidate_name'),
+        question_number=question_index + 1,
+        total_questions=len(QUESTIONS)
+    )
 
 @app.route('/run', methods=['POST'])
-def run():
-    code = request.get_data(as_text=True)
+def run_code():
+    """Executes Python code and returns the output."""
+    code = request.json.get('code', '')
     old_stdout = sys.stdout
     redirected_output = sys.stdout = io.StringIO()
+    output = ''
+    error = ''
     try:
         exec(code, {})
         output = redirected_output.getvalue()
     except Exception as e:
-        output = str(e)
+        output = redirected_output.getvalue()
+        error = str(e) + "\n" + traceback.format_exc()
     finally:
         sys.stdout = old_stdout
+    return jsonify({'output': output, 'error': error})
 
-    return output
+@app.route('/thank_you')
+def thank_you():
+    if 'candidate_name' not in session:
+        return redirect(url_for('index'))
 
+    # Load existing submissions
+    if os.path.exists(ANSWERS_FILE):
+        with open(ANSWERS_FILE, 'r') as f:
+            all_submissions = json.load(f)
+    else:
+        all_submissions = []
 
-@app.route('/register', methods=['POST', 'GET'])
-def register():
-    try:
-        data = request.get_json(silent=True) or {}
+    # Format the final answers
+    final_answers = {}
+    raw_answers = session.get('answers', {})
+    for i, q_data in enumerate(QUESTIONS):
+        final_answers[q_data['question']] = raw_answers.get(str(i), "")
 
-        # Create new record with questions from questions.py
-        new_record = Answer()
-        new_record.questions = json.dumps(questions)
-        new_record.applicant_name = data.get('name','xxxxx')
-        db.session.add(new_record)
-        db.session.commit()
-        return str(new_record.applicant_id)
+    # Create new submission object
+    new_submission = {
+        "candidate_name": session.get('candidate_name'),
+        "submission_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "answers": final_answers
+    }
 
-    except Exception as e:
-        return str(e)
+    # Add new submission
+    all_submissions.append(new_submission)
 
+    # Save all submissions back to the file
+    with open(ANSWERS_FILE, 'w') as f:
+        json.dump(all_submissions, f, indent=4)
+    
+    # Clear the session
+    session.clear()
+    
+    return render_template('thank_you.html')
 
-@app.route('/submit_evaluation', methods=['POST'])
-def submit_evaluation():
-    try:
-        data = request.get_json()
-        record = db.session.get(Answer, int(data['applicant_id']))
-        questions_json=json.loads(record.questions)
-        for question in questions_json:
-            question['answer']=data['answers'][str(question['id'])]
-        record.questions = json.dumps(questions_json)
-        db.session.commit()
-        return 'thanks'
-    except Exception as e:
-        return str(e)
-
-
-@app.route("/evaluate/<int:candidate_id>", methods=["GET"])
-@app.response(200, AnswerSchema)
-def evaluate(candidate_id):
-    try:
-        candidate = db.session.get(Answer, candidate_id)
-        if not candidate:
-            return "Candidate is not registered please contact admin"
+@app.route('/review')
+def review():
+    if not os.path.exists(ANSWERS_FILE):
+        return render_template('review.html', submissions=[])
+        
+    with open(ANSWERS_FILE, 'r') as f:
         try:
-            questions_value = json.loads(candidate.questions or '{}')
-        except (json.JSONDecodeError, TypeError):
-            questions_value = {}
+            all_submissions = json.load(f)
+        except json.JSONDecodeError:
+            all_submissions = []
+    
+    # Sort submissions by date, newest first
+    all_submissions.sort(key=lambda x: x.get('submission_date', ''), reverse=True)
 
-        payload = {
-            "applicant_name": candidate.applicant_name,
-            "applicant_id": candidate.applicant_id,
-            "questions": questions_value
-        }
-        return render_template("evaluate.html", payload=payload)
-    except Exception as e:
-        return str(e)
+    return render_template('review.html', submissions=all_submissions)
 
-@app.route("/admin", methods=["GET"])
-def admin():
-    # Admin dashboard logic
-    return render_template("admin.html")
-
-
-
-
-if __name__ == "__main__":
-    mainapp = Flask(__name__)
-    mainapp.register_blueprint(app)
-    mainapp.run(host='127.0.0.1', port=5000, debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
