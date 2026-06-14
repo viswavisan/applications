@@ -1,0 +1,14 @@
+[Unit]
+Description=Flask Application
+After=network.target
+
+[Service]
+User=opc
+WorkingDirectory=/home/opc/applications
+ExecStart=/usr/bin/python3 /home/opc/applications/main.py
+Restart=always
+
+EnvironmentFile=/home/opc/secret/.env
+
+[Install]
+WantedBy=multi-user.target

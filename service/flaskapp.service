@@ -1,5 +1,5 @@
 [Unit]
-Description=Flask App Service
+Description=Flask Application
 After=network.target
 
 [Service]
