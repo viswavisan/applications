@@ -59,6 +59,26 @@ class Database:
         final_statements="\n\n".join(schema_statements)
         return final_statements
 
+    def _handle_alter_column(self, op):
+        new_type = str(getattr(op, "modify_type").compile(dialect=self.engine.dialect))
+        if self.is_oracle:
+            return f"ALTER TABLE {op.table_name} MODIFY {op.column_name} {new_type};"
+        else:
+            return f"ALTER TABLE {op.table_name} ALTER COLUMN {op.column_name} TYPE {new_type};"
+
+    def _handle_add_column(self, op):
+        return f"ALTER TABLE {op.table_name} ADD COLUMN {op.column.name} {op.column.type.compile(self.engine.dialect)};"
+
+    def _handle_drop_column(self, op):
+        return f"ALTER TABLE {op.table_name} DROP COLUMN {op.column_name};"
+
+    def _handle_drop_table(self, op):
+        return f"DROP TABLE {op.table_name};"
+
+    def _handle_create_table(self, op):
+        ddl = str(CreateTable(op.table).compile(self.engine))
+        return ddl + ";"
+
     def get_sql_schema_diffs(self):
         conn = self.engine.connect()
         context = MigrationContext.configure(conn)
@@ -68,36 +88,30 @@ class Database:
         if not self.is_oracle:
             statements.append("BEGIN;")
 
+        op_handler_map = {
+            "AlterColumnOp": self._handle_alter_column,
+            "AddColumnOp": self._handle_add_column,
+            "DropColumnOp": self._handle_drop_column,
+            "DropTableOp": self._handle_drop_table,
+            "CreateTableOp": self._handle_create_table,
+        }
+
         for op in diffs.upgrade_ops.ops:
             if hasattr(op, 'table_name') and op.table_name == 'dbtools$execution_history':
                 continue
-            cname = op.__class__.__name__
+            
+            op_class_name = op.__class__.__name__
 
-            if cname == "ModifyTableOps":
-                for subop in op.ops:
-                    subname = subop.__class__.__name__
-                    if subname == "AlterColumnOp":
-                        new_type = str(getattr(subop, "modify_type").compile(dialect=self.engine.dialect))
-                        if self.is_oracle:
-                            sql = f"ALTER TABLE {subop.table_name} MODIFY {subop.column_name} {new_type};"
-                        else:
-                            sql = f"ALTER TABLE {subop.table_name} ALTER COLUMN {subop.column_name} TYPE {new_type};"
-                        statements.append(sql)
-                    elif subname == "AddColumnOp":
-                        sql = f"ALTER TABLE {subop.table_name} ADD COLUMN {subop.column.name} {subop.column.type.compile(self.engine.dialect)};"
-                        statements.append(sql)
-                    elif subname == "DropColumnOp":
-                        sql = f"ALTER TABLE {subop.table_name} DROP COLUMN {subop.column_name};"
-                        statements.append(sql)
-
-            elif cname == "DropTableOp":
-                sql = f"DROP TABLE {op.table_name};"
-                statements.append(sql)
-
-            elif cname == "CreateTableOp":
-                from sqlalchemy.schema import CreateTable
-                ddl = str(CreateTable(op.table).compile(self.engine))
-                statements.append(ddl + ";")
+            if op_class_name == "ModifyTableOps":
+                for sub_op in op.ops:
+                    sub_op_class_name = sub_op.__class__.__name__
+                    handler = op_handler_map.get(sub_op_class_name)
+                    if handler:
+                        statements.append(handler(sub_op))
+            else:
+                handler = op_handler_map.get(op_class_name)
+                if handler:
+                    statements.append(handler(op))
         
         if not self.is_oracle:
             statements.append("COMMIT;")

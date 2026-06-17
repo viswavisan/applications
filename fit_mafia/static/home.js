@@ -253,7 +253,7 @@ function applyMemberFilter() {
 
         if (mobileTd && statusTd) {
             const mobileValue = mobileTd.textContent || mobileTd.innerText;
-            const statusValue = statusTd.getAttribute('data-status') || '';
+            const statusValue = statusTd.dataset.status || '';
 
             const matchesText = mobileValue.toUpperCase().indexOf(textFilter) > -1;
             const matchesStatus = (statusFilter === '') || (statusFilter === statusValue);
@@ -271,50 +271,52 @@ function searchByMobile() {
     applyMemberFilter();
 }
 
-function filterTransactions() {
+function getFilterValues() {
     const searchInput = document.getElementById('transactionSearch');
     const textFilter = searchInput ? searchInput.value.toUpperCase() : '';
     const fromDateStr = document.getElementById('transactionFromDate').value;
     const toDateStr = document.getElementById('transactionToDate').value;
+    const fromDate = fromDateStr ? new Date(fromDateStr) : null;
+    const toDate = toDateStr ? new Date(toDateStr) : null;
+    return { textFilter, fromDate, toDate };
+}
 
-    let fromDate = null;
-    let toDate = null;
+function matchesTextFilter(mobileValue, textFilter) {
+    if (currentUserRole !== 'admin') return true;
+    return mobileValue.toUpperCase().indexOf(textFilter) > -1;
+}
 
-    if (fromDateStr) fromDate = new Date(fromDateStr);
-    if (toDateStr) toDate = new Date(toDateStr);
+function matchesDateFilter(txnDate, fromDate, toDate) {
+    if (!fromDate && !toDate) return true;
+    if (Number.isNaN(txnDate.getTime())) return false;
+    if (fromDate && txnDate < fromDate) return false;
+    if (toDate && txnDate > toDate) return false;
+    return true;
+}
 
+function matchesFilters(tr, filters) {
+    const mobileTd = tr.querySelector('.txn-mobile-cell');
+    const dateTd = tr.querySelector('.txn-date-cell');
+
+    if (!mobileTd || !dateTd) return false;
+
+    const mobileValue = mobileTd.textContent || mobileTd.innerText;
+    const dateValueStr = dateTd.textContent || dateTd.innerText;
+    const txnDate = new Date(dateValueStr);
+
+    const textMatch = matchesTextFilter(mobileValue, filters.textFilter);
+    const dateMatch = matchesDateFilter(txnDate, filters.fromDate, filters.toDate);
+
+    return textMatch && dateMatch;
+}
+
+function filterTransactions() {
+    const filters = getFilterValues();
     const table = document.getElementById('transactionsTable');
-    const tr = table.getElementsByTagName('tr');
+    const trs = table.getElementsByTagName('tr');
 
-    for (let i = 1; i < tr.length; i++) {
-        const mobileTd = tr[i].querySelector('.txn-mobile-cell');
-        const dateTd = tr[i].querySelector('.txn-date-cell');
-
-        if (mobileTd && dateTd) {
-            const mobileValue = mobileTd.textContent || mobileTd.innerText;
-            const dateValueStr = dateTd.textContent || dateTd.innerText;
-
-            const matchesText = currentUserRole === 'admin' ? mobileValue.toUpperCase().indexOf(textFilter) > -1 : true;
-            let matchesDate = true;
-
-            if (fromDate || toDate) {
-                const txnDate = new Date(dateValueStr);
-                if (!Number.isNaN(txnDate.getTime())) {
-                    if (fromDate && txnDate < fromDate) {
-                        matchesDate = false;
-                    }
-                    if (toDate && txnDate > toDate) {
-                        matchesDate = false;
-                    }
-                }
-            }
-
-            if (matchesText && matchesDate) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
-        }
+    for (let i = 1; i < trs.length; i++) {
+        trs[i].style.display = matchesFilters(trs[i], filters) ? "" : "none";
     }
 }
 
