@@ -79,6 +79,16 @@ class Database:
         ddl = str(CreateTable(op.table).compile(self.engine))
         return ddl + ";"
 
+    def _flatten_ops(self, ops):
+        """Flattens a list of Alembic operations, expanding ModifyTableOps."""
+        all_ops = []
+        for op in ops:
+            if op.__class__.__name__ == "ModifyTableOps":
+                all_ops.extend(op.ops)
+            else:
+                all_ops.append(op)
+        return all_ops
+
     def get_sql_schema_diffs(self):
         conn = self.engine.connect()
         context = MigrationContext.configure(conn)
@@ -96,22 +106,15 @@ class Database:
             "CreateTableOp": self._handle_create_table,
         }
 
-        for op in diffs.upgrade_ops.ops:
+        all_ops = self._flatten_ops(diffs.upgrade_ops.ops)
+
+        for op in all_ops:
             if hasattr(op, 'table_name') and op.table_name == 'dbtools$execution_history':
                 continue
             
-            op_class_name = op.__class__.__name__
-
-            if op_class_name == "ModifyTableOps":
-                for sub_op in op.ops:
-                    sub_op_class_name = sub_op.__class__.__name__
-                    handler = op_handler_map.get(sub_op_class_name)
-                    if handler:
-                        statements.append(handler(sub_op))
-            else:
-                handler = op_handler_map.get(op_class_name)
-                if handler:
-                    statements.append(handler(op))
+            handler = op_handler_map.get(op.__class__.__name__)
+            if handler:
+                statements.append(handler(op))
         
         if not self.is_oracle:
             statements.append("COMMIT;")
