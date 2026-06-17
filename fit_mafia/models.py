@@ -79,8 +79,3 @@ class Transaction(Base):
     discount = Column(String(50), nullable=True)
     payment_method = Column(String(50), nullable=True)
     status = Column(String(50), nullable=True)
-
-
-# db.init_db()
-# statements=db.get_sql_schema_diffs()
-# print(db.run_sql(statements))
