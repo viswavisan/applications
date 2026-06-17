@@ -1,12 +1,12 @@
 // Global variable to store current member data for editing
 let currentMemberData = null;
 let cameraStream = null;
-const { currentUserRole, currentUserName, currentMember } = window.APP_CONFIG;
+const { currentUserRole, currentUserName, currentMember } = globalThis.APP_CONFIG;
 
 // --- Helper function for cache busting ---
 function addCacheBuster(url) {
     if (!url) return '';
-    const timestamp = new Date().getTime();
+    const timestamp = Date.now();
     // Check if URL already has query parameters
     if (url.includes('?')) {
         return `${url}&_=${timestamp}`;
@@ -109,7 +109,7 @@ if (captureBtn) {
 const photoInput = document.getElementById('photo');
 if (photoInput) {
     photoInput.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
+        if (e.target.files?.[0]) {
             const file = e.target.files[0];
             const maxSize = 1 * 1024 * 1024; // 1 MB
 
@@ -186,7 +186,7 @@ function showSection(sectionId, event) {
 
     // If navigating away from register, clear it (unless editing)
     const mobileNumField = document.getElementById('mobile_number');
-    if (sectionId !== 'register' && mobileNumField && mobileNumField.hasAttribute('readonly')) {
+    if (sectionId !== 'register' && mobileNumField?.hasAttribute('readonly')) {
         resetForm();
     }
 
@@ -238,9 +238,9 @@ function applyMemberFilter() {
     const textFilter = mobileSearchInput.value.toUpperCase();
 
     let statusFilter = '';
-    if (document.getElementById('filterActive') && document.getElementById('filterActive').checked) {
+    if (document.getElementById('filterActive')?.checked) {
         statusFilter = 'active';
-    } else if (document.getElementById('filterExpired') && document.getElementById('filterExpired').checked) {
+    } else if (document.getElementById('filterExpired')?.checked) {
         statusFilter = 'expired';
     }
 
@@ -255,7 +255,7 @@ function applyMemberFilter() {
             const mobileValue = mobileTd.textContent || mobileTd.innerText;
             const statusValue = statusTd.dataset.status || '';
 
-            const matchesText = mobileValue.toUpperCase().indexOf(textFilter) > -1;
+            const matchesText = mobileValue.toUpperCase().includes(textFilter);
             const matchesStatus = (statusFilter === '') || (statusFilter === statusValue);
 
             if (matchesText && matchesStatus) {
@@ -283,7 +283,7 @@ function getFilterValues() {
 
 function matchesTextFilter(mobileValue, textFilter) {
     if (currentUserRole !== 'admin') return true;
-    return mobileValue.toUpperCase().indexOf(textFilter) > -1;
+    return mobileValue.toUpperCase().includes(textFilter);
 }
 
 function matchesDateFilter(txnDate, fromDate, toDate) {
@@ -576,7 +576,7 @@ function editMember() {
     showSection('register');
 }
 
-function resetForm() {
+function resetForm(event) {
     // Reset form fields
     document.getElementById('memberForm').reset();
     document.getElementById('memberForm').action = '/register_member';
@@ -612,7 +612,7 @@ function resetForm() {
     document.getElementById('joining_date').value = today;
 
     // If called explicitly via Cancel button, go back to Member list or Dashboard
-    if(event && event.target.id === 'cancelEditBtn') {
+    if(event?.target.id === 'cancelEditBtn') {
         if (currentUserRole === 'admin') {
             showSection('members');
         } else {
@@ -668,7 +668,7 @@ async function handleMemberFormSubmit(event) {
         isValid &= validateAndHighlight(passwordField, passwordField.value.length >= 4);
         isValid &= validateAndHighlight(genderField, genderField.value !== '');
         isValid &= validateAndHighlight(dobField, dobField.value !== '');
-        if (termsAcceptedField && termsAcceptedField.hasAttribute('required')) {
+        if (termsAcceptedField?.hasAttribute('required')) {
             isValid &= validateAndHighlight(termsAcceptedField, termsAcceptedField.checked);
         }
 
