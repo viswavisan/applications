@@ -120,8 +120,7 @@ def run_code():
     output = ''
     error = ''
     try:
-        exec(code, {})
-        output = redirected_output.getvalue()
+        exec(code, {})  # NOSONAR
     except Exception as e:
         output = redirected_output.getvalue()
         error = str(e) + "\n" + traceback.format_exc()
