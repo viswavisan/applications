@@ -171,7 +171,7 @@ def test_logout_exception(mock_db_session, mock_logging):
         logout(session)
 
         mock_db_session.rollback.assert_called_once()
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
         assert 'session_id' not in session
 
 
@@ -227,7 +227,7 @@ def test_register_transaction_exception(mock_db_session, mock_logging):
         assert result['status'] == 'error'
         assert result['message'] == INTERNAL_SERVER_ERROR
         mock_db_session.rollback.assert_called_once()
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
 
 
 # --- PRINT RECEIPT TESTS ---
@@ -468,7 +468,7 @@ def test_register_member_exception(mock_db_session, mock_logging):
         assert result['status'] == 'error'
         assert result['message'] == INTERNAL_SERVER_ERROR
         mock_db_session.rollback.assert_called_once()
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
 
 @patch('fit_mafia.app_controller.ObjectStorageManager')
 def test_register_member_upload_error(mock_storage_manager):
@@ -534,7 +534,7 @@ def test_update_member_exception(mock_db_session, mock_logging):
         assert result['status'] == 'error'
         assert result['message'] == INTERNAL_SERVER_ERROR
         mock_db_session.rollback.assert_called_once()
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
 
 
 @patch('fit_mafia.app_controller.db.session')
@@ -617,7 +617,7 @@ def test_update_vitals_exception(mock_db_session, mock_logging):
         assert result['message'] == INTERNAL_SERVER_ERROR
         assert result['code'] == 500
         mock_db_session.rollback.assert_called_once()
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
 
 
 # --- RENEW SUBSCRIPTION TESTS ---
@@ -735,7 +735,7 @@ def test_renew_subscription_exception(mock_db_session, mock_logging):
         assert result['message'] == INTERNAL_SERVER_ERROR
         assert result['code'] == 500
         mock_db_session.rollback.assert_called_once()
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
 
 
 # --- GET MEMBER TESTS ---
@@ -797,7 +797,7 @@ def test_get_member_exception(mock_db_session, mock_logging):
         assert result['status'] == 'error'
         assert result['message'] == INTERNAL_SERVER_ERROR
         assert result['code'] == 500
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
 
 
 # --- SUPPORT SCRIPT TESTS ---
@@ -809,7 +809,7 @@ def test_calculate_end_date_success():
 @patch('fit_mafia.app_controller.logging')
 def test_calculate_end_date_invalid_plan(mock_logging):
     assert calculate_end_date('2023-01-15', 'invalid plan') is None
-    mock_logging.error.assert_called_once()
+    mock_logging.exception.assert_called_once()
 
 @pytest.mark.parametrize("start_date, plan", [
     (None, '1 Month'),
@@ -887,7 +887,7 @@ def test_handle_session_timeout_expired_db_exception(mock_db_session, mock_loggi
 
         assert handle_session_timeout(now,session) is True
         mock_db_session.rollback.assert_called_once()
-        mock_logging.error.assert_called_once()
+        mock_logging.exception.assert_called_once()
         assert 'last_active' not in session
 
 @patch('fit_mafia.app_controller.db.session')
@@ -912,4 +912,4 @@ def test_create_db_session_exception(mock_db_session, mock_logging):
     
     assert session_id is None
     mock_db_session.rollback.assert_called_once()
-    mock_logging.error.assert_called_once()
+    mock_logging.exception.assert_called_once()
