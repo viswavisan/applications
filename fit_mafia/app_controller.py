@@ -42,7 +42,7 @@ def login(username,password):
             }
         }
     except Exception as e:
-        logging.error(f"An unexpected error occurred during login: {e}")
+        logging.exception(f"An unexpected error occurred during login: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
@@ -89,7 +89,7 @@ def home(session):
 
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error fetching homepage data for role {role}: {e}")
+        logging.exception(f"Error fetching homepage data for role {role}: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
@@ -103,7 +103,7 @@ def logout(session):
                 db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logging.error(f"Error updating session end_time on logout: {e}")
+            logging.exception(f"Error updating session end_time on logout: {e}")
     session.clear()
 
 
@@ -126,7 +126,7 @@ def register_transaction(session,request):
         return {'status': 'success', 'message': 'Transaction registered successfully.'}
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error registering transaction: {e}")
+        logging.exception(f"Error registering transaction: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
@@ -143,7 +143,7 @@ def print_receipt(transaction_id,session):
         return {'status': 'success', 'template_data': {'txn': txn, 'member': member}}
 
     except Exception as e:
-        logging.error(f"Error generating receipt for transaction {transaction_id}: {e}")
+        logging.exception(f"Error generating receipt for transaction {transaction_id}: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
@@ -188,7 +188,7 @@ def register_member(session,request,file):
 
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error registering member: {e}")
+        logging.exception(f"Error registering member: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
@@ -224,7 +224,7 @@ def update_member(_, request, file):
 
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error updating member for mobile number {mobile_number}: {e}")
+        logging.exception(f"Error updating member for mobile number {mobile_number}: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
@@ -248,7 +248,7 @@ def update_vitals(session,request):
 
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error updating vitals: {e}")
+        logging.exception(f"Error updating vitals: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR, 'code': 500}
 
 def renew_subscription(session,request):
@@ -295,7 +295,7 @@ def renew_subscription(session,request):
 
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error renewing subscription: {e}")
+        logging.exception(f"Error renewing subscription: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR, 'code': 500}
 
 def get_member(mobile_number,session):
@@ -308,7 +308,7 @@ def get_member(mobile_number,session):
             return {'status': 'success', 'message': member, 'code': 200}
         return {'status': 'error', 'message': MEMBER_NOT_FOUND, 'code': 404}
     except Exception as e:
-        logging.error(f"API error getting member {mobile_number}: {e}")
+        logging.exception(f"API error getting member {mobile_number}: {e}")
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR, 'code': 500}
 
 
@@ -324,7 +324,7 @@ def calculate_end_date(start_date_str, plan):
         end_date = start_date + relativedelta(months=months)
         return end_date.isoformat()
     except (ValueError, TypeError) as e:
-        logging.error(f"Error calculating end date for start_date={start_date_str}, plan={plan}: {e}")
+        logging.exception(f"Error calculating end date for start_date={start_date_str}, plan={plan}: {e}")
         return None
 
 
@@ -340,7 +340,7 @@ def create_db_session(username):
         return new_session_id
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error recording new session for user {username}: {e}")
+        logging.exception(f"Error recording new session for user {username}: {e}")
         return None
 
 
@@ -357,7 +357,7 @@ def handle_session_timeout(now,session):
                 db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logging.error(f"Error updating session end_time on timeout: {e}")
+            logging.exception(f"Error updating session end_time on timeout: {e}")
 
         session.clear()
         return True
