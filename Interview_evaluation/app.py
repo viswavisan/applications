@@ -8,6 +8,7 @@ import sys
 import traceback # Import traceback to get more detailed error info
 from flask_smorest import Blueprint
 
+
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
 app = Blueprint('Evaluation', __name__,
                 template_folder=template_dir,
