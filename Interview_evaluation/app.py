@@ -7,6 +7,7 @@ import io
 import sys
 import traceback # Import traceback to get more detailed error info
 from flask_smorest import Blueprint
+import logging
 
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
@@ -123,7 +124,8 @@ def run_code():
         exec(code, {})  # NOSONAR
     except Exception as e:
         output = redirected_output.getvalue()
-        error = str(e) + "\n" + traceback.format_exc()
+        logging.exception("An error occurred while executing user code.")
+        error = str(e)
     finally:
         sys.stdout = old_stdout
     return jsonify({'output': output, 'error': error})
