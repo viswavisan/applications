@@ -158,10 +158,10 @@ function closeOffcanvas() {
 function calculateDatePlusMonths(startDateStr, monthsStr) {
     if (!startDateStr || !monthsStr) return '';
     const date = new Date(startDateStr);
-    if (isNaN(date.getTime())) return '';
+    if (Number.isNaN(date.getTime())) return '';
 
-    const months = parseInt(monthsStr.split(' ')[0]);
-    if (isNaN(months)) return '';
+    const months = Number.parseInt(monthsStr.split(' ')[0]);
+    if (Number.isNaN(months)) return '';
 
     date.setMonth(date.getMonth() + months);
     return date.toISOString().split('T')[0];
@@ -298,7 +298,7 @@ function filterTransactions() {
 
             if (fromDate || toDate) {
                 const txnDate = new Date(dateValueStr);
-                if (!isNaN(txnDate.getTime())) {
+                if (!Number.isNaN(txnDate.getTime())) {
                     if (fromDate && txnDate < fromDate) {
                         matchesDate = false;
                     }
@@ -434,8 +434,8 @@ async function viewMember(mobileNumber) {
 }
 
 function calculateBMI() {
-    const height = parseFloat(document.getElementById('vitalHeight').value);
-    const weight = parseFloat(document.getElementById('vitalWeight').value);
+    const height = Number.parseFloat(document.getElementById('vitalHeight').value);
+    const weight = Number.parseFloat(document.getElementById('vitalWeight').value);
     if (height && weight && height > 0) {
         // BMI = weight(kg) / (height(m) * height(m))
         const heightInMeters = height / 100;

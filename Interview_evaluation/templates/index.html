@@ -23,12 +23,18 @@
             width: 90%;
             max-width: 400px;
         }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            text-align: left;
+        }
         input[type="text"] {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ced4da;
             border-radius: 4px;
-            margin-top: 1.5rem;
+            margin-top: 0;
             margin-bottom: 1.5rem;
             box-sizing: border-box;
             font-size: 1rem;
@@ -53,7 +59,8 @@
         <h2>Python Developer Interview</h2>
         <p>Please enter your name to begin.</p>
         <form method="post" action="{{ url_for('Evaluation.start_interview') }}">
-            <input type="text" name="candidate_name" placeholder="Your Name" required>
+            <label for="candidate_name">Your Name</label>
+            <input type="text" id="candidate_name" name="candidate_name" required>
             <button type="submit">Start Interview</button>
         </form>
     </div>

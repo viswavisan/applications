@@ -93,6 +93,15 @@
             color: #343a40;
             margin-bottom: 1rem;
         }
+
+        label {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.75rem;
+        }
+
         .expected-output {
             font-family: "SF Mono", "Fira Code", "Consolas", monospace;
             font-size: 0.9rem;
@@ -203,6 +212,7 @@
         </div>
 
         <form method="post" id="interview-form">
+            <label for="code-editor">Your Answer</label>
             <textarea name="answer" id="code-editor" style="display: none;">{{ existing_answer }}</textarea>
 
             <div class="button-group">
@@ -242,7 +252,7 @@
         });
 
         const form = document.getElementById('interview-form');
-        form.insertBefore(editor.getWrapperElement(), form.firstChild);
+        form.insertBefore(editor.getWrapperElement(), form.firstChild.nextSibling);
         editor.setValue(document.getElementById('code-editor').value);
 
         document.getElementById('interview-form').addEventListener('submit', function() {
