@@ -1,5 +1,6 @@
 // Global variable to store current member data for editing
 let currentMemberData = null;
+let cameraStream = null;
 const { currentUserRole, currentUserName, currentMember } = window.APP_CONFIG;
 
 // --- Helper function for cache busting ---
