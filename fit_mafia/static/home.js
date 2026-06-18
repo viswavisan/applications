@@ -686,7 +686,7 @@ async function handleMemberFormSubmit(event) {
         const response = await fetch(url, { method: 'POST', body: formData });
         const result = await response.json();
         if (result.redirect) {
-            window.location.href = result.redirect;
+            globalThis.location.href = result.redirect;
             return;
         }
 
@@ -734,12 +734,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     else {
         const currentActive = document.querySelector('.section.active');
-        if (currentActive && currentActive.id === 'register') {
+        if (currentActive?.id === 'register') {
             const joiningDateField = document.getElementById('joining_date');
             if (joiningDateField) {
                 const today = new Date().toISOString().split('T')[0];
                 joiningDateField.value = today;
-            } } }
+            }
+        }
+    }
 
     document.getElementById('submitBtn').addEventListener('click', handleMemberFormSubmit);
     autoCloseFlashes();
