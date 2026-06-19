@@ -53,7 +53,7 @@
         .login-input {
             background-color: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            color: rgb(201, 189, 189);
+            color: rgb(240, 240, 240);
             border-radius: 4px;
             padding: 5px 10px;
             font-size: 0.9rem;
@@ -64,8 +64,8 @@
         .login-input:focus {
             background-color: rgba(255, 255, 255, 0.15);
             border-color: var(--primary-color);
-            outline: none;
             color: rgb(255, 255, 255);
+            box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.5);
         }
 
         /* Hero Section */
@@ -189,7 +189,7 @@
         /* WhatsApp Button */
         .btn-whatsapp {
             background-color: #25D366;
-            color: white;
+            color: black;
             border: none;
             font-weight: bold;
             display: flex;
@@ -200,7 +200,7 @@
         }
         .btn-whatsapp:hover {
             background-color: #1ebe57;
-            color: white;
+            color: black;
         }
         .btn-outline-whatsapp {
             background-color: transparent;
@@ -215,7 +215,7 @@
         }
         .btn-outline-whatsapp:hover {
             background-color: #25D366;
-            color: white;
+            color: black;
         }
 
         /* Offers Section */
