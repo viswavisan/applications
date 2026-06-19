@@ -53,7 +53,7 @@
         .login-input {
             background-color: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            color: rgb(240, 240, 240);
+            color: white;
             border-radius: 4px;
             padding: 5px 10px;
             font-size: 0.9rem;
@@ -64,7 +64,7 @@
         .login-input:focus {
             background-color: rgba(255, 255, 255, 0.15);
             border-color: var(--primary-color);
-            color: rgb(255, 255, 255);
+            color: black;
             box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.5);
         }
 
