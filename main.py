@@ -23,3 +23,4 @@ swagger.register_blueprint(interview_blueprint, url_prefix='/evaluation')
 
 if __name__ == "__main__":
     main_app.run(host='127.0.0.1', port=5000)
+    
