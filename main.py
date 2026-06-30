@@ -8,6 +8,7 @@ load_dotenv()
 from Interview_evaluation.app import app as interview_blueprint
 from fit_mafia.app import app as fit_mafia_blueprint
 from health_check import app as health_blueprint
+from monitor.app import app as monitor_blueprint
 from swagger import configure_swagger
 
 main_app = Flask(__name__) # NOSONAR
@@ -19,6 +20,7 @@ swagger=configure_swagger(main_app)
 swagger.register_blueprint(fit_mafia_blueprint)
 swagger.register_blueprint(health_blueprint)
 swagger.register_blueprint(interview_blueprint, url_prefix='/evaluation')
+swagger.register_blueprint(monitor_blueprint)
 
 
 if __name__ == "__main__":
