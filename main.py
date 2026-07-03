@@ -8,7 +8,6 @@ load_dotenv()
 from Interview_evaluation.app import app as interview_blueprint
 from fit_mafia.app import app as fit_mafia_blueprint
 from health_check import app as health_blueprint
-from monitor.app import app as monitor_blueprint
 from swagger import configure_swagger
 
 main_app = Flask(__name__) # NOSONAR
