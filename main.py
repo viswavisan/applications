@@ -20,8 +20,6 @@ swagger=configure_swagger(main_app)
 swagger.register_blueprint(fit_mafia_blueprint)
 swagger.register_blueprint(health_blueprint)
 swagger.register_blueprint(interview_blueprint, url_prefix='/evaluation')
-swagger.register_blueprint(monitor_blueprint)
-
 
 if __name__ == "__main__":
     main_app.run(host='127.0.0.1', port=5000)
